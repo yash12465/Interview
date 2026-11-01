@@ -220,12 +220,12 @@ export function RoleSwitcher({ currentRole, userName, subtitle }: RoleSwitcherPr
             </Link>
             <div className="flex items-center gap-3">
               <Link
-                href="/admin"
+                href="/staff"
                 onClick={() => setOpen(false)}
                 className="hover:text-indigo-600 font-medium transition-colors"
-                title="Payload CMS backend administration"
+                title="Staff admin control centre"
               >
-                Payload CMS
+                Staff Admin
               </Link>
               <span className="text-slate-300">·</span>
               <Link

@@ -1,9 +1,12 @@
 'use client'
 
+import { NotificationBell } from './ui/NotificationBell'
+
 import { useState } from 'react'
 import { Phase3Page } from './CandidatePhase3'
 import { usePrototypeState } from './PrototypeState'
 import { RoleSwitcher } from './ui/RoleSwitcher'
+import { useAuth } from '@/lib/supabase/use-auth'
 
 type Page = 'dashboard' | 'setup' | 'session' | 'report' | 'history' | 'progress' | 'preparation' | 'tracks' | 'academy' | 'lesson' | 'answerLab' | 'questions' | 'question' | 'profile' | 'saved' | 'sessions' | 'sessionDetail' | 'notifications' | 'billing' | 'settings'
 
@@ -77,20 +80,24 @@ function Onboarding({ done, exit }: { done: () => void; exit: () => void }) {
 }
 
 function Shell({ page, setPage, exit, children }: { page: Page; setPage: (p: Page) => void; exit: () => void; children: React.ReactNode }) {
+  const { signOut, user, profile } = useAuth()
+  const displayName = profile?.name || user?.user_metadata?.name || 'Aarav Kumar'
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'AK'
+
   return <div className="candidate-shell">
     <aside className="app-sidebar">
       <button className="app-logo" onClick={exit}><span>IS</span><b>InterviewSetu</b></button>
       <div className="workspace-label">CANDIDATE SPACE</div>
       <nav>{nav.map(([key, label, icon]) => <button key={key} className={page === key || (key==='academy'&&page==='lesson') || (key==='questions'&&page==='question') || (key==='sessions'&&page==='sessionDetail') ? 'active' : ''} onClick={() => setPage(key)}><CIcon name={icon} /><span>{label}</span>{key === 'setup' && <i>AI</i>}</button>)}</nav>
-      <div className="sidebar-bottom"><button onClick={() => setPage('profile')}><span className="avatar">AK</span><span><b>Aarav Kumar</b><small>Software Engineering</small></span></button><button onClick={() => { window.location.href = '/login' }}>Sign out</button></div>
+      <div className="sidebar-bottom"><button onClick={() => setPage('profile')}><span className="avatar">{initials}</span><span><b>{displayName}</b><small>Software Engineering</small></span></button><button onClick={() => signOut()}>Sign out</button></div>
     </aside>
     <section className="app-workspace">
       <header className="app-topbar">
         <div><small>CANDIDATE / {nav.find(n => n[0] === page)?.[1].toUpperCase()}</small></div>
-        <RoleSwitcher currentRole="candidate" userName="Aarav Kumar" />
+        <RoleSwitcher currentRole="candidate" userName={displayName} />
         <label><CIcon name="search"/><input placeholder="Search your preparation" /></label>
-        <button className="top-icon" onClick={() => setPage('notifications')}><CIcon name="bell"/><i>2</i></button>
-        <span className="avatar" onClick={() => setPage('profile')} style={{ cursor: 'pointer' }}>AK</span>
+        <NotificationBell customUserId={user?.id || 'usr-cand-1'} />
+        <span className="avatar" onClick={() => setPage('profile')} style={{ cursor: 'pointer' }}>{initials}</span>
       </header>
       <main className="app-main page-enter" key={page}>{children}</main>
     </section>
