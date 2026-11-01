@@ -4,6 +4,8 @@
 
 InterviewSetu is India's interview preparation platform providing adaptive AI mock interviews, verified exam & placement selection stages, learning academy frameworks, and an admin-verified 1:1 human mock interview marketplace.
 
+📖 **Comprehensive Technical Documentation:** For the full architecture, data flow diagrams, frontend/backend engineering details, code format standards, and API specifications, see **[Full Architecture & System Design Specification](docs/ARCHITECTURE_AND_SYSTEM_DESIGN.md)**.
+
 ---
 
 ## Portals & Access
