@@ -1,5 +1,7 @@
 'use client'
 
+import { CandidateSessionsManager } from './booking/CandidateSessionsManager'
+
 import { useState } from 'react'
 import { usePrototypeState } from './PrototypeState'
 
@@ -428,6 +430,9 @@ export function Saved({ go }:{go:Go}) {
 }
 
 export function Sessions({ go }:{go:Go}) {
+  return <CandidateSessionsManager />;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const unused = () => {
   const [tab, setTab] = useState('Upcoming')
   const [booking, setBooking] = useState(false)
   const [step, setStep] = useState(1)
@@ -473,7 +478,8 @@ export function Sessions({ go }:{go:Go}) {
         ))}
       </section>
     </>
-  )
+  );
+  };
 }
 
 function Booking({ step, setStep, close }:{step:number;setStep:(n:number)=>void;close:()=>void}) {

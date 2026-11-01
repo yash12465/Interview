@@ -1,8 +1,15 @@
 'use client'
 
+import { InterviewerScheduleManager } from './booking/InterviewerScheduleManager'
+import { NotificationBell } from './ui/NotificationBell'
+
+import { InterviewerProfileEditor } from './profile/InterviewerProfileEditor'
+
 import React, { useState } from 'react'
 import { usePrototypeState } from './PrototypeState'
 import { RoleSwitcher } from './ui/RoleSwitcher'
+import { useAuth } from '@/lib/supabase/use-auth'
+import { InterviewerApprovalBanner } from './auth/InterviewerApprovalBanner'
 
 type Page='dashboard'|'bookings'|'booking'|'calendar'|'session'|'feedback'|'candidates'|'profile'|'expertise'|'services'|'earnings'|'reviews'|'notifications'|'settings'
 
@@ -45,7 +52,12 @@ function ProfilePreview(){return <div className="interviewer-preview"><span>PUBL
 const nav:[Page,string,string][]=[['dashboard','Overview','grid'],['bookings','Bookings','card'],['calendar','Calendar & Availability','calendar'],['candidates','Candidate History','users'],['profile','My Profile','user'],['expertise','Expertise & Categories','star'],['services','Pricing & Packages','card'],['earnings','Earnings & Payouts','chart'],['reviews','Reviews','star'],['notifications','Notifications','bell'],['settings','Settings','settings']]
 
 function Shell({page,setPage,exit,children}:{page:Page;setPage:(p:Page)=>void;exit:()=>void;children:React.ReactNode}){
-  return <div className="candidate-shell interviewer-shell"><aside className="app-sidebar"><button className="app-logo" onClick={exit}><span>IS</span><b>InterviewSetu</b></button><div className="workspace-label">INTERVIEWER SPACE</div><nav>{nav.map(([p,l,i])=><button className={page===p||(p==='bookings'&&page==='booking')?'active':''} onClick={()=>setPage(p)} key={p}><IIcon name={i}/><span>{l}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={()=>setPage('profile')}><span className="avatar">RM</span><span><b>Riya Mehta</b><small>Verified interviewer</small></span></button><button onClick={()=>{window.location.href='/login'}}>Sign out</button></div></aside><section className="app-workspace"><header className="app-topbar"><div><small>INTERVIEWER / {nav.find(n=>n[0]===page)?.[1].toUpperCase()||'SESSION'}</small></div><RoleSwitcher currentRole="interviewer" userName="Riya Mehta" /><label><IIcon name="search"/><input placeholder="Search bookings"/></label><button className="top-icon" onClick={()=>setPage('notifications')}><IIcon name="bell"/><i>3</i></button><span className="avatar" onClick={()=>setPage('profile')} style={{cursor:'pointer'}}>RM</span></header><main className="app-main page-enter" key={page}>{children}</main></section></div>
+  const { signOut, user, profile } = useAuth()
+  const displayName = profile?.name || user?.user_metadata?.name || 'Riya Mehta'
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'RM'
+  const isReview = profile?.status === 'under_review' || profile?.interviewer_profile?.verificationStatus === 'under_review'
+
+  return <div className="candidate-shell interviewer-shell"><aside className="app-sidebar"><button className="app-logo" onClick={exit}><span>IS</span><b>InterviewSetu</b></button><div className="workspace-label">INTERVIEWER SPACE</div><nav>{nav.map(([p,l,i])=><button className={page===p||(p==='bookings'&&page==='booking')?'active':''} onClick={()=>setPage(p)} key={p}><IIcon name={i}/><span>{l}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={()=>setPage('profile')}><span className="avatar">{initials}</span><span><b>{displayName}</b><small>{isReview ? 'Under review' : 'Verified interviewer'}</small></span></button><button onClick={() => signOut()}>Sign out</button></div></aside><section className="app-workspace"><header className="app-topbar"><div><small>INTERVIEWER / {nav.find(n=>n[0]===page)?.[1].toUpperCase()||'SESSION'}</small></div><RoleSwitcher currentRole="interviewer" userName={displayName} /><label><IIcon name="search"/><input placeholder="Search bookings"/></label><NotificationBell customUserId={user?.id || 'usr-mentor-1'} /><span className="avatar" onClick={()=>setPage('profile')} style={{cursor:'pointer'}}>{initials}</span></header><main className="app-main page-enter" key={page}><InterviewerApprovalBanner />{children}</main></section></div>
 }
 const Title=({eye,title,copy,action}:{eye:string;title:string;copy:string;action?:React.ReactNode})=><div className="app-page-title"><div className="app-title-text"><p>{eye}</p><h1>{title}</h1><span>{copy}</span></div>{action&&<div className="app-title-actions">{action}</div>}</div>
 
@@ -137,6 +149,8 @@ function Dashboard({go}:{go:(p:Page)=>void}){
 }
 
 function Bookings({go}:{go:(p:Page)=>void}){
+ return <InterviewerScheduleManager viewMode="bookings" />;
+ const _unusedBookings = () => {
  const { update } = usePrototypeState()
  const [tab,setTab]=useState('Requests')
  const [accepted,setAccepted]=useState<string[]>([])
@@ -202,7 +216,8 @@ function Bookings({go}:{go:(p:Page)=>void}){
        )}
      </section>
    </>
- )
+ );
+ };
 }
 
 function BookingDetail({go}:{go:(p:Page)=>void}){
@@ -422,6 +437,8 @@ function Feedback({go}:{go:(p:Page)=>void}){
 }
 
 function Calendar(){
+ return <InterviewerScheduleManager viewMode="calendar" />;
+ const _unusedCal = () => {
  const [view,setView]=useState('Week')
  const [toast,setToast]=useState('')
  const [rules,setRules]=useState([
@@ -498,7 +515,8 @@ function Calendar(){
        <button onClick={handleAddRecurring}>+ Add recurring hours</button>
      </section>
    </>
- )
+ );
+ };
 }
 
 function SimplePage({page,go}:{page:Page;go:(p:Page)=>void}){
@@ -571,18 +589,7 @@ function SimplePage({page,go}:{page:Page;go:(p:Page)=>void}){
          )}
        </>
      ):page==='profile'?(
-       <div className="profile-edit manager">
-         <div className="profile-form">
-           <label>Display name<input defaultValue="Riya Mehta"/></label>
-           <label>Headline<input defaultValue="Senior Software Engineer | Technical Mock Interviews"/></label>
-           <label className="full">Bio<textarea defaultValue="I help early-career engineers explain projects, reason through trade-offs and respond confidently to technical follow-ups."/></label>
-           <label>Languages<input defaultValue="English, Hindi"/></label>
-           <label>Session types<input defaultValue="Technical, Behavioural, Project Defence"/></label>
-           <div className="verify-note full"><b>Verification is controlled by platform review.</b><p>Changes to credentials or sensitive claims can trigger re-review.</p></div>
-           <Btn onClick={()=>showToast('Draft profile changes saved.')}>Save draft</Btn>
-         </div>
-         <ProfilePreview/>
-       </div>
+       <InterviewerProfileEditor/>
      ):page==='expertise'?(
        <div className="expertise-grid">
          {[['Software Engineering','APPROVED','Frontend, backend, system design'],['Project Defence','APPROVED','College placements and professional roles'],['Data Analytics','PENDING','Evidence review required']].map(x=>(

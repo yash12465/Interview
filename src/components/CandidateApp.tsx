@@ -1,5 +1,7 @@
 'use client'
 
+import { NotificationBell } from './ui/NotificationBell'
+
 import { useState } from 'react'
 import { Phase3Page } from './CandidatePhase3'
 import { usePrototypeState } from './PrototypeState'
@@ -89,7 +91,7 @@ function Shell({ page, setPage, exit, children }: { page: Page; setPage: (p: Pag
         <div><small>CANDIDATE / {nav.find(n => n[0] === page)?.[1].toUpperCase()}</small></div>
         <RoleSwitcher currentRole="candidate" userName="Aarav Kumar" />
         <label><CIcon name="search"/><input placeholder="Search your preparation" /></label>
-        <button className="top-icon" onClick={() => setPage('notifications')}><CIcon name="bell"/><i>2</i></button>
+        <NotificationBell customUserId={user?.id || 'usr-cand-1'} />
         <span className="avatar" onClick={() => setPage('profile')} style={{ cursor: 'pointer' }}>AK</span>
       </header>
       <main className="app-main page-enter" key={page}>{children}</main>

@@ -1,5 +1,8 @@
 'use client'
 
+import { AdminBookingsManager } from './booking/AdminBookingsManager'
+import { NotificationBell } from './ui/NotificationBell'
+
 import React, { useState } from 'react'
 import { usePrototypeState } from './PrototypeState'
 import { RoleSwitcher } from './ui/RoleSwitcher'
@@ -132,7 +135,7 @@ function Shell({page,setPage,exit,children}:{page:Page;setPage:(p:Page)=>void;ex
          <div><small>ADMIN CONTROL CENTRE</small><b>{nav.find(n=>n[0]===page)?.[1]}</b></div>
          <RoleSwitcher currentRole="admin" userName="Super Admin" />
          <label><AIcon name="search"/><input placeholder="Search users, bookings, references"/></label>
-         <button onClick={()=>setPage('notifications')}><AIcon name="bell"/><i>5</i></button>
+         <NotificationBell customUserId="usr-admin-1" />
          <span onClick={()=>setPage('settings')} style={{cursor:'pointer'}}>SA</span>
        </header>
        <main className="page-enter" key={page}>{children}</main>
@@ -764,7 +767,7 @@ export default function AdminApp({exit=()=>location.href='/'}:{exit?:()=>void}){
 
  if(!logged)return <Login done={()=>setLogged(true)} exit={exit}/>
  const act=(title:string,danger=false)=>setAction({title,danger})
- const view=page==='overview'?<Overview go={setPage} act={act}/>:page==='users'||page==='candidates'?<Users act={act}/>:page==='verification'?<Verification act={act}/>:['catalogue','stages','questions','content','ai','rubrics'].includes(page)?<Catalogue page={page} act={act}/>:page==='bookings'||page==='payments'?<Operations page={page} act={act}/>:<Governance page={page} act={act}/>
+ const view=page==='overview'?<Overview go={setPage} act={act}/>:page==='users'||page==='candidates'?<Users act={act}/>:page==='verification'?<Verification act={act}/>:['catalogue','stages','questions','content','ai','rubrics'].includes(page)?<Catalogue page={page} act={act}/>:page==='bookings'?<AdminBookingsManager/>:page==='payments'?<Operations page={page} act={act}/>:<Governance page={page} act={act}/>
 
  return (
    <Shell page={page} setPage={setPage} exit={exit}>
