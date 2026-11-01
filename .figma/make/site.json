@@ -1,0 +1,11 @@
+{
+  "title": "InterviewSetu",
+  "description": "Learn how to answer. Practise with confidence. Improve with every interview.",
+  "language": "en",
+  "robots": {
+    "index": true
+  },
+  "accessibility": {
+    "addBypassLinks": true
+  }
+}
