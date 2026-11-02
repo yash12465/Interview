@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { Calendar, Clock, Search, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
+import type React from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiUrl } from '@/lib/api'
 import { useAuth } from '@/lib/supabase/use-auth'
 import type { BookingRecord } from '@/types'
@@ -38,10 +40,12 @@ export function CandidateSessionsManager() {
     setTimeout(() => setToast(null), 4000)
   }
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch(apiUrl(`/bookings?role=candidate&userId=${candidateId}`), { cache: 'no-store' })
+      const res = await fetch(apiUrl(`/bookings?role=candidate&userId=${candidateId}`), {
+        cache: 'no-store',
+      })
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
         setBookings(json.data)
@@ -51,14 +55,14 @@ export function CandidateSessionsManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [candidateId])
 
   useEffect(() => {
     fetchBookings()
-  }, [candidateId])
+  }, [fetchBookings])
 
   // Filter bookings based on active tab
-  const filtered = bookings.filter(b => {
+  const filtered = bookings.filter((b) => {
     const matchesSearch =
       !search ||
       b.bookingRef.toLowerCase().includes(search.toLowerCase()) ||
@@ -110,7 +114,8 @@ export function CandidateSessionsManager() {
         fetchBookings()
       } else {
         setRescheduleError(
-          data.error || 'The requested new slot is not available or conflicts with an existing interview.'
+          data.error ||
+            'The requested new slot is not available or conflicts with an existing interview.',
         )
       }
     } catch {
@@ -162,28 +167,31 @@ export function CandidateSessionsManager() {
       {toast && (
         <div
           className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200 ${
-            toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+            toast.type === 'success'
+              ? 'bg-success-solid text-inverse'
+              : 'bg-danger-solid text-inverse'
           }`}
         >
-          <span>{toast.type === 'success' ? '✓' : '⚠️'}</span>
+          <span>{toast.type === 'success' ? '✓' : <TriangleAlert size={16} />}</span>
           <span>{toast.message}</span>
         </div>
       )}
 
       {/* Header with Title and Book Mentor Link */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-200/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/80">
         <div>
-          <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+          <span className="text-xs font-bold text-brand-strong uppercase tracking-wider">
             HUMAN MOCK SESSIONS & AVAILABILITY
           </span>
-          <h1 className="text-2xl font-extrabold text-zinc-900 mt-0.5">My Interview Sessions</h1>
-          <p className="text-xs text-zinc-500 mt-1">
-            Track confirmed interviews, manage pending requests, and reschedule or cancel with automatic conflict prevention.
+          <h1 className="text-2xl font-extrabold text-ink mt-0.5">My Interview Sessions</h1>
+          <p className="text-xs text-muted mt-1">
+            Track confirmed interviews, manage pending requests, and reschedule or cancel with
+            automatic conflict prevention.
           </p>
         </div>
         <Link
           href="/mentors"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-colors whitespace-nowrap self-start"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-inverse font-semibold text-xs shadow-sm transition-colors whitespace-nowrap self-start"
         >
           <span>+ Book a Mentor</span>
         </Link>
@@ -191,9 +199,9 @@ export function CandidateSessionsManager() {
 
       {/* Tabs */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2 p-1 bg-zinc-100 rounded-xl">
-          {(['Upcoming', 'Pending', 'Completed', 'Cancelled'] as const).map(t => {
-            const count = bookings.filter(b => {
+        <div className="flex gap-2 p-1 bg-surface-sunken rounded-xl">
+          {(['Upcoming', 'Pending', 'Completed', 'Cancelled'] as const).map((t) => {
+            const count = bookings.filter((b) => {
               if (t === 'Upcoming') return b.status === 'confirmed' || b.status === 'rescheduled'
               if (t === 'Pending') return b.status === 'pending' || b.status === 'slot_held'
               if (t === 'Completed') return b.status === 'completed'
@@ -203,46 +211,48 @@ export function CandidateSessionsManager() {
 
             return (
               <button
+                type="button"
                 key={t}
                 onClick={() => setTab(t)}
                 className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                  tab === t
-                    ? 'bg-white text-zinc-900 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-900'
+                  tab === t ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
                 }`}
               >
-                {t} {count > 0 && <span className="ml-1 text-[10px] px-1.5 py-0.2 bg-zinc-200 rounded-full">{count}</span>}
+                {t}{' '}
+                {count > 0 && (
+                  <span className="ml-1 text-xs px-1.5 py-0.2 bg-surface-sunken rounded-full">
+                    {count}
+                  </span>
+                )}
               </button>
             )
           })}
         </div>
 
-        <div className="relative min-w-[240px]">
+        <div className="relative min-w-60">
           <input
             type="text"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search mentor, reference..."
-            className="w-full px-3.5 py-2 pl-9 rounded-xl border border-zinc-200 bg-white text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3.5 py-2 pl-9 rounded-xl border border-border bg-surface text-xs text-ink placeholder-subtle focus:outline-none focus:ring-2 focus:ring-brand"
           />
-          <svg className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Search className="size-4 text-subtle absolute left-3 top-2.5" />
         </div>
       </div>
 
       {/* Session Cards List */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-zinc-400 bg-white rounded-3xl border border-zinc-200">
+        <div className="p-12 text-center text-xs text-subtle bg-surface rounded-3xl border border-border">
           Loading sessions from Supabase database...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-zinc-200/90 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto mb-3 text-lg font-bold">
+        <div className="p-12 text-center bg-surface rounded-3xl border border-border/90 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-surface-sunken text-subtle flex items-center justify-center mx-auto mb-3 text-lg font-bold">
             ∅
           </div>
-          <h2 className="text-sm font-bold text-zinc-800">No {tab.toLowerCase()} sessions found</h2>
-          <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+          <h2 className="text-sm font-bold text-ink">No {tab.toLowerCase()} sessions found</h2>
+          <p className="text-xs text-muted mt-1 max-w-sm mx-auto">
             {tab === 'Upcoming'
               ? 'You have no interviews scheduled right now. Browse top verified mentors and book a tailored mock.'
               : `There are no sessions currently categorized under ${tab}.`}
@@ -250,7 +260,7 @@ export function CandidateSessionsManager() {
           {tab === 'Upcoming' && (
             <Link
               href="/mentors"
-              className="inline-block mt-4 px-4 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-semibold text-xs hover:bg-indigo-100 transition-colors"
+              className="inline-block mt-4 px-4 py-2 rounded-xl bg-brand-soft text-brand-strong font-semibold text-xs hover:bg-brand-tint/40 transition-colors"
             >
               Explore Available Mentors →
             </Link>
@@ -258,7 +268,7 @@ export function CandidateSessionsManager() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map(booking => {
+          {filtered.map((booking) => {
             const isConfirmed = booking.status === 'confirmed' || booking.status === 'rescheduled'
             const isPending = booking.status === 'pending' || booking.status === 'slot_held'
             const isCancelled = booking.status === 'cancelled' || booking.status === 'rejected'
@@ -266,67 +276,67 @@ export function CandidateSessionsManager() {
             return (
               <div
                 key={booking.id}
-                className="bg-white p-6 rounded-3xl border border-zinc-200/90 shadow-sm hover:border-zinc-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                className="bg-surface p-6 rounded-3xl border border-border/90 shadow-sm hover:border-border-strong transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl bg-brand text-inverse font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
                     {booking.mentorName
                       .split(' ')
-                      .map(n => n[0])
+                      .map((n) => n[0])
                       .join('')
                       .slice(0, 2)}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-mono text-[11px] font-bold text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded">
+                      <span className="font-mono text-xs font-bold text-body bg-surface-sunken px-2 py-0.5 rounded">
                         {booking.bookingRef}
                       </span>
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           booking.status === 'confirmed'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'bg-success-soft text-success border border-success-border'
                             : booking.status === 'rescheduled'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : booking.status === 'pending'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : booking.status === 'cancelled'
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-zinc-100 text-zinc-700'
+                              ? 'bg-warning-soft text-warning border border-warning-border'
+                              : booking.status === 'pending'
+                                ? 'bg-brand-soft text-brand-strong border border-brand-tint'
+                                : booking.status === 'cancelled'
+                                  ? 'bg-danger-soft text-danger border border-danger-border'
+                                  : 'bg-surface-sunken text-body'
                         }`}
                       >
                         {booking.status}
                       </span>
-                      <span className="text-xs text-zinc-500">· {booking.trackTitle}</span>
+                      <span className="text-xs text-muted">· {booking.trackTitle}</span>
                     </div>
 
-                    <h2 className="text-base font-bold text-zinc-900">{booking.serviceName}</h2>
-                    <p className="text-xs text-zinc-600 mt-0.5">
-                      Interviewer: <b className="text-zinc-800">{booking.mentorName}</b>
+                    <h2 className="text-base font-bold text-ink">{booking.serviceName}</h2>
+                    <p className="text-xs text-body mt-0.5">
+                      Interviewer: <b className="text-ink">{booking.mentorName}</b>
                     </p>
 
-                    <div className="flex items-center gap-3 mt-2.5 text-xs text-zinc-500 font-medium flex-wrap">
-                      <span className="flex items-center gap-1 text-zinc-700 font-semibold">
-                        <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <div className="flex items-center gap-3 mt-2.5 text-xs text-muted font-medium flex-wrap">
+                      <span className="flex items-center gap-1 text-body font-semibold">
+                        <Calendar className="size-3.5 text-subtle" />
                         {booking.scheduledDate}
                       </span>
                       <span>·</span>
-                      <span className="flex items-center gap-1 text-zinc-700 font-semibold">
-                        <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span className="flex items-center gap-1 text-body font-semibold">
+                        <Clock className="size-3.5 text-subtle" />
                         {booking.scheduledTime} IST
                       </span>
                       <span>·</span>
-                      <span className="bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded text-[11px]">
+                      <span className="bg-surface-sunken text-body px-2 py-0.5 rounded text-xs">
                         {booking.durationMinutes} min
                       </span>
                       <span>·</span>
-                      <span className="text-zinc-900 font-bold">
+                      <span className="text-ink font-bold">
                         ₹{(booking.pricePaise / 100).toFixed(0)}
                       </span>
                     </div>
 
                     {booking.cancellationReason && (
-                      <p className="text-xs text-rose-600 mt-2 bg-rose-50/50 p-2 rounded-xl">
+                      <p className="text-xs text-danger mt-2 bg-danger-soft/50 p-2 rounded-xl">
                         <b>Cancellation Reason:</b> {booking.cancellationReason}
                       </p>
                     )}
@@ -334,7 +344,7 @@ export function CandidateSessionsManager() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-end gap-2.5 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-end gap-2.5 shrink-0">
                   {isConfirmed && (
                     <>
                       <button
@@ -346,7 +356,7 @@ export function CandidateSessionsManager() {
                           setNewDuration(booking.durationMinutes)
                           setRescheduleError(null)
                         }}
-                        className="px-3.5 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors w-full sm:w-auto"
+                        className="px-3.5 py-2 rounded-xl border border-border text-xs font-semibold text-body hover:bg-surface-soft transition-colors w-full sm:w-auto"
                       >
                         Reschedule
                       </button>
@@ -358,7 +368,7 @@ export function CandidateSessionsManager() {
                           setCancelNotes('')
                           setCancelError(null)
                         }}
-                        className="px-3.5 py-2 rounded-xl border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors w-full sm:w-auto"
+                        className="px-3.5 py-2 rounded-xl border border-danger-border text-xs font-semibold text-danger hover:bg-danger-soft transition-colors w-full sm:w-auto"
                       >
                         Cancel
                       </button>
@@ -374,7 +384,7 @@ export function CandidateSessionsManager() {
                         setCancelNotes('')
                         setCancelError(null)
                       }}
-                      className="px-3.5 py-2 rounded-xl border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors w-full sm:w-auto"
+                      className="px-3.5 py-2 rounded-xl border border-danger-border text-xs font-semibold text-danger hover:bg-danger-soft transition-colors w-full sm:w-auto"
                     >
                       Withdraw Request
                     </button>
@@ -383,7 +393,7 @@ export function CandidateSessionsManager() {
                   {isCancelled && (
                     <Link
                       href={`/mentors/${booking.mentorId}`}
-                      className="px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors w-full sm:w-auto text-center"
+                      className="px-3.5 py-2 rounded-xl bg-brand-soft text-brand-strong text-xs font-semibold hover:bg-brand-tint/40 transition-colors w-full sm:w-auto text-center"
                     >
                       Rebook Slot
                     </Link>
@@ -397,66 +407,80 @@ export function CandidateSessionsManager() {
 
       {/* Reschedule Modal */}
       {rescheduleBooking && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-100">
-              <h2 className="font-bold text-base text-zinc-900">Reschedule Mock Interview</h2>
+        <div className="fixed inset-0 bg-surface-inverse/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-3xl p-6 max-w-md w-full shadow-lg border border-border animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-border-soft">
+              <h2 className="font-bold text-base text-ink">Reschedule Mock Interview</h2>
               <button
                 type="button"
                 onClick={() => setRescheduleBooking(null)}
-                className="text-zinc-400 hover:text-zinc-600 text-sm font-bold"
+                className="text-subtle hover:text-body text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-zinc-600 mt-3">
-              Rescheduling session <b className="text-zinc-900">{rescheduleBooking.bookingRef}</b> with {rescheduleBooking.mentorName}.
+            <p className="text-xs text-body mt-3">
+              Rescheduling session <b className="text-ink">{rescheduleBooking.bookingRef}</b> with{' '}
+              {rescheduleBooking.mentorName}.
             </p>
 
             {rescheduleError && (
-              <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                ⚠️ {rescheduleError}
+              <div className="mt-3 p-3 rounded-xl bg-danger-soft border border-danger-border text-danger text-xs">
+                <TriangleAlert size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+                {rescheduleError}
               </div>
             )}
 
             <form onSubmit={handleRescheduleSubmit} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                <label
+                  htmlFor="candidate-sessions-manager-new-date"
+                  className="block text-xs font-semibold text-body uppercase tracking-wider mb-1"
+                >
                   New Date
                 </label>
                 <input
+                  id="candidate-sessions-manager-new-date"
                   type="date"
                   required
                   value={newDate}
                   min={new Date().toISOString().split('T')[0]}
-                  onChange={e => setNewDate(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-border text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                  <label
+                    htmlFor="candidate-sessions-manager-new-time-ist"
+                    className="block text-xs font-semibold text-body uppercase tracking-wider mb-1"
+                  >
                     New Time (IST)
                   </label>
                   <input
+                    id="candidate-sessions-manager-new-time-ist"
                     type="time"
                     required
                     value={newTime}
-                    onChange={e => setNewTime(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-border text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                  <label
+                    htmlFor="candidate-sessions-manager-duration"
+                    className="block text-xs font-semibold text-body uppercase tracking-wider mb-1"
+                  >
                     Duration
                   </label>
                   <select
+                    id="candidate-sessions-manager-duration"
                     value={newDuration}
-                    onChange={e => setNewDuration(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    onChange={(e) => setNewDuration(Number(e.target.value))}
+                    className="w-full px-3.5 py-2 rounded-xl border border-border text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand bg-surface"
                   >
                     <option value={30}>30 Minutes</option>
                     <option value={45}>45 Minutes</option>
@@ -465,23 +489,27 @@ export function CandidateSessionsManager() {
                 </div>
               </div>
 
-              <div className="p-3 bg-zinc-50 rounded-xl text-[11px] text-zinc-500 space-y-1">
-                <p>• Reschedule will be validated against database conflict constraints in real time.</p>
-                <p>• Both candidate and interviewer will receive an updated calendar notification.</p>
+              <div className="p-3 bg-surface-soft rounded-xl text-xs text-muted space-y-1">
+                <p>
+                  • Reschedule will be validated against database conflict constraints in real time.
+                </p>
+                <p>
+                  • Both candidate and interviewer will receive an updated calendar notification.
+                </p>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border-soft">
                 <button
                   type="button"
                   onClick={() => setRescheduleBooking(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:text-zinc-900"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-body hover:text-ink"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={rescheduleLoading}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs disabled:opacity-50 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-inverse font-semibold text-xs disabled:opacity-50 transition-all flex items-center gap-1.5"
                 >
                   {rescheduleLoading ? 'Checking Availability...' : 'Confirm Reschedule'}
                 </button>
@@ -493,39 +521,45 @@ export function CandidateSessionsManager() {
 
       {/* Cancellation Modal */}
       {cancelBooking && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-zinc-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center pb-3 border-b border-zinc-100">
-              <h2 className="font-bold text-base text-zinc-900">Cancel Interview Session</h2>
+        <div className="fixed inset-0 bg-surface-inverse/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-3xl p-6 max-w-md w-full shadow-lg border border-border animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-border-soft">
+              <h2 className="font-bold text-base text-ink">Cancel Interview Session</h2>
               <button
                 type="button"
                 onClick={() => setCancelBooking(null)}
-                className="text-zinc-400 hover:text-zinc-600 text-sm font-bold"
+                className="text-subtle hover:text-body text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-zinc-600 mt-3">
-              Are you sure you want to cancel booking <b className="text-zinc-900">{cancelBooking.bookingRef}</b> on{' '}
+            <p className="text-xs text-body mt-3">
+              Are you sure you want to cancel booking{' '}
+              <b className="text-ink">{cancelBooking.bookingRef}</b> on{' '}
               {cancelBooking.scheduledDate} with {cancelBooking.mentorName}?
             </p>
 
             {cancelError && (
-              <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
-                ⚠️ {cancelError}
+              <div className="mt-3 p-3 rounded-xl bg-danger-soft border border-danger-border text-danger text-xs">
+                <TriangleAlert size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+                {cancelError}
               </div>
             )}
 
             <form onSubmit={handleCancelSubmit} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                <label
+                  htmlFor="candidate-sessions-manager-reason-for-cancellation"
+                  className="block text-xs font-semibold text-body uppercase tracking-wider mb-1"
+                >
                   Reason for Cancellation
                 </label>
                 <select
+                  id="candidate-sessions-manager-reason-for-cancellation"
                   value={cancelReason}
-                  onChange={e => setCancelReason(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-border text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand bg-surface"
                 >
                   <option value="Schedule conflict">Schedule conflict</option>
                   <option value="Need more preparation time">Need more preparation time</option>
@@ -536,35 +570,39 @@ export function CandidateSessionsManager() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">
+                <label
+                  htmlFor="candidate-sessions-manager-additional-notes-optional"
+                  className="block text-xs font-semibold text-body uppercase tracking-wider mb-1"
+                >
                   Additional Notes (Optional)
                 </label>
                 <textarea
+                  id="candidate-sessions-manager-additional-notes-optional"
                   rows={2}
                   value={cancelNotes}
-                  onChange={e => setCancelNotes(e.target.value)}
+                  onChange={(e) => setCancelNotes(e.target.value)}
                   placeholder="Provide any additional detail for the interviewer..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2 rounded-xl border border-border text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
-              <div className="p-3 bg-rose-50/60 rounded-xl text-[11px] text-rose-800 space-y-1">
+              <div className="p-3 bg-danger-soft/60 rounded-xl text-xs text-danger space-y-1">
                 <p>• Cancelling immediately releases the time slot for other candidates to book.</p>
                 <p>• In-app cancellation notifications will be sent to the interviewer.</p>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-border-soft">
                 <button
                   type="button"
                   onClick={() => setCancelBooking(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-600 hover:text-zinc-900"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-body hover:text-ink"
                 >
                   Keep Booking
                 </button>
                 <button
                   type="submit"
                   disabled={cancelLoading}
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs disabled:opacity-50 transition-all flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-danger-solid hover:bg-danger-solid/90 text-inverse font-semibold text-xs disabled:opacity-50 transition-all flex items-center gap-1.5"
                 >
                   {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
                 </button>

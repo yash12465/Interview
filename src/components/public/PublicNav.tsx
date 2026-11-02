@@ -1,12 +1,18 @@
 'use client'
 
-import React, { useState } from 'react'
+import { X } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { RippleButton } from '@/components/ui/RippleButton'
+import { SettingsLink } from '@/components/ui/SettingsLink'
+import { useAuth } from '@/lib/supabase/use-auth'
+import { useEscapeKey } from '@/lib/use-escape-key'
 
 export function PublicNav({ currentPath = '/' }: { currentPath?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  useEscapeKey(() => setModalOpen(false))
+  const { user, role, signOut, loading } = useAuth()
 
   const navLinks = [
     { href: '/interview-tracks', label: 'Explore Tracks' },
@@ -16,6 +22,9 @@ export function PublicNav({ currentPath = '/' }: { currentPath?: string }) {
     { href: '/mentors', label: 'Find Mentors' },
     { href: '/pricing', label: 'Pricing' },
   ]
+
+  const dashboardPath =
+    role === 'admin' ? '/staff' : role === 'interviewer' ? '/app/interviewer' : '/app/candidate'
 
   return (
     <>
@@ -27,16 +36,24 @@ export function PublicNav({ currentPath = '/' }: { currentPath?: string }) {
 
       <header className="site-header">
         <Link href="/" className="logo" aria-label="InterviewSetu home">
-          <span className="logo-mark"><i /><i /><i /></span>
-          <strong>Interview<span>Setu</span></strong>
+          <span className="logo-mark">
+            <i />
+            <i />
+            <i />
+          </span>
+          <strong>
+            Interview<span>Setu</span>
+          </strong>
         </Link>
 
         <nav className={`desktop-nav ${mobileMenuOpen ? 'open' : ''}`}>
-          {navLinks.map(link => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={currentPath === link.href ? 'active-nav-link text-indigo-600 font-bold' : ''}
+              className={
+                currentPath === link.href ? 'active-nav-link text-brand-strong font-bold' : ''
+              }
               onClick={() => setMobileMenuOpen(false)}
             >
               {link.label}
@@ -45,15 +62,40 @@ export function PublicNav({ currentPath = '/' }: { currentPath?: string }) {
         </nav>
 
         <div className="header-actions">
-          <Link href="/login" className="login font-bold text-zinc-700 hover:text-indigo-600 px-3 py-2">
-            Log in
-          </Link>
-          <RippleButton variant="primary" size="md" onClick={() => setModalOpen(true)}>
-            Get started
-          </RippleButton>
+          <SettingsLink />
+          {!loading && user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href={dashboardPath}
+                className="font-bold text-xs sm:text-sm text-brand-strong bg-brand-soft border border-brand-tint hover:bg-brand-tint/40 px-3 py-1.5 rounded-xl transition-all"
+              >
+                Dashboard →
+              </Link>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="text-xs sm:text-sm font-semibold text-body hover:text-ink px-2 py-1.5"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="login font-bold text-body hover:text-brand-strong px-3 py-2"
+              >
+                Log in
+              </Link>
+              <RippleButton variant="primary" size="md" onClick={() => setModalOpen(true)}>
+                Get started
+              </RippleButton>
+            </>
+          )}
         </div>
 
         <button
+          type="button"
           className="icon-button menu"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
@@ -69,47 +111,60 @@ export function PublicNav({ currentPath = '/' }: { currentPath?: string }) {
       </header>
 
       {modalOpen && (
-        <div className="modal-backdrop" onMouseDown={() => setModalOpen(false)}>
-          <div
-            className="modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-            onMouseDown={e => e.stopPropagation()}
-          >
+        // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click is a pointer shortcut; Escape (useEscapeKey) closes it from the keyboard.
+        <div
+          className="modal-backdrop"
+          onMouseDown={(e) => e.target === e.currentTarget && setModalOpen(false)}
+        >
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <button
+              type="button"
               className="icon-button modal-close"
               onClick={() => setModalOpen(false)}
               aria-label="Close"
             >
-              <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>
+              <X size={20} />
             </button>
             <span className="eyebrow">CHOOSE YOUR PATH</span>
             <h2 id="modal-title">How will you use InterviewSetu?</h2>
-            <p>Choose your pathway to begin. All user roles share the same unified platform identity.</p>
+            <p>
+              Choose your pathway to begin. All user roles share the same unified platform identity.
+            </p>
             <div className="role-grid">
               <Link
-                href="/onboarding/candidate"
+                href="/register"
                 className="role-card text-left"
                 onClick={() => setModalOpen(false)}
               >
                 <b>Prepare for interviews</b>
-                <span>Practise with AI, build structured answers, track progress and book verified mentors.</span>
-                <em>Continue as candidate →</em>
+                <span>
+                  Practise with AI, build structured answers, track progress and book verified
+                  mentors.
+                </span>
+                <em>Register as candidate →</em>
               </Link>
               <Link
-                href="/onboarding/interviewer"
+                href="/register"
                 className="role-card text-left"
                 onClick={() => setModalOpen(false)}
               >
                 <b>Become an interviewer</b>
-                <span>Apply to conduct structured mock interviews in your domain of experience.</span>
-                <em>View application →</em>
+                <span>
+                  Apply to conduct structured mock interviews in your domain of experience.
+                </span>
+                <em>Apply as interviewer →</em>
               </Link>
             </div>
-            <div className="mt-4 pt-4 border-t border-zinc-100 flex justify-between items-center text-xs text-zinc-500">
-              <span>Already have an account? <Link href="/login" className="text-indigo-600 font-semibold underline">Sign in</Link></span>
-              <Link href="/staff" className="text-zinc-400 hover:text-zinc-600">Staff portal →</Link>
+            <div className="mt-4 pt-4 border-t border-border-soft flex justify-between items-center text-xs text-muted">
+              <span>
+                Already have an account?{' '}
+                <Link href="/login" className="text-brand-strong font-semibold underline">
+                  Sign in
+                </Link>
+              </span>
+              <Link href="/staff" className="text-subtle hover:text-body">
+                Staff portal →
+              </Link>
             </div>
           </div>
         </div>

@@ -16,12 +16,10 @@ export async function uploadResume(file: File, userId: string): Promise<StorageU
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
   const filePath = `${userId}/${Date.now()}_${sanitizedName}`
 
-  const { data, error } = await supabase.storage
-    .from('resumes')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true,
-    })
+  const { data, error } = await supabase.storage.from('resumes').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+  })
 
   if (error) {
     throw error
@@ -46,7 +44,7 @@ export async function uploadResume(file: File, userId: string): Promise<StorageU
 export async function uploadVerificationDocument(
   file: File,
   userId: string,
-  docType: 'evidence' | 'certificate' = 'evidence'
+  docType: 'evidence' | 'certificate' = 'evidence',
 ): Promise<StorageUploadResult> {
   const supabase = createClient()
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -83,20 +81,16 @@ export async function uploadAvatar(file: File, userId: string): Promise<StorageU
   const ext = file.name.split('.').pop() || 'png'
   const filePath = `${userId}/avatar_${Date.now()}.${ext}`
 
-  const { data, error } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true,
-    })
+  const { data, error } = await supabase.storage.from('avatars').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+  })
 
   if (error) {
     throw error
   }
 
-  const { data: publicData } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(data.path)
+  const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(data.path)
 
   return {
     path: data.path,
@@ -109,11 +103,13 @@ export async function uploadAvatar(file: File, userId: string): Promise<StorageU
 /**
  * Get signed URL for a private storage object (resume or verification document)
  */
-export async function getSignedUrl(bucket: 'resumes' | 'verification_documents', path: string, expiresIn = 3600): Promise<string | null> {
+export async function getSignedUrl(
+  bucket: 'resumes' | 'verification_documents',
+  path: string,
+  expiresIn = 3600,
+): Promise<string | null> {
   const supabase = createClient()
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, expiresIn)
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
 
   if (error) {
     console.error(`Error getting signed URL for ${bucket}/${path}:`, error)
@@ -125,11 +121,12 @@ export async function getSignedUrl(bucket: 'resumes' | 'verification_documents',
 /**
  * Delete a storage object
  */
-export async function deleteStorageFile(bucket: 'resumes' | 'verification_documents' | 'avatars', path: string): Promise<boolean> {
+export async function deleteStorageFile(
+  bucket: 'resumes' | 'verification_documents' | 'avatars',
+  path: string,
+): Promise<boolean> {
   const supabase = createClient()
-  const { error } = await supabase.storage
-    .from(bucket)
-    .remove([path])
+  const { error } = await supabase.storage.from(bucket).remove([path])
 
   if (error) {
     console.error(`Error deleting ${bucket}/${path}:`, error)

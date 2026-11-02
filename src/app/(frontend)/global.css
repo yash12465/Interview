@@ -1,0 +1,321 @@
+/*
+ * Design tokens: the only file allowed to contain colour values (hex, rgb, hsl).
+ * Rules are in DESIGN.md > Styling. In short:
+ *   1. Palette   raw colours, referenced only by the semantic layer below.
+ *   2. Semantic  what components use: var(--surface), var(--text-muted), var(--brand) ...
+ *                Each one is light-dark(light, dark); <html data-theme> picks the scheme.
+ *   3. Accents   <html data-accent="warm"> swaps the brand and neutral tokens.
+ *   4. @theme    exposes the semantic layer as Tailwind utilities: bg-surface, text-muted ...
+ * Need a colour that isn't here? Add it to the palette, give it a semantic name, then use the
+ * semantic name. Never write a colour value in styles.css or in JSX.
+ */
+
+/* 1. Palette */
+:root {
+  --white: #ffffff;
+  --black: #000000;
+
+  /* Slate: neutrals for the blue accent */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-850: #172235;
+  --slate-875: #111a2b;
+  --slate-900: #0f172a;
+  --slate-925: #243146;
+  --slate-950: #0b1220;
+
+  /* Stone: neutrals for the warm accent */
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-850: #1f1c1a;
+  --stone-875: #151311;
+  --stone-900: #1c1917;
+  --stone-925: #2e2a27;
+  --stone-950: #0c0a09;
+
+  --blue-50: #eff6ff;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+  --blue-a15: #3b82f626;
+
+  --orange-50: #fff7ed;
+  --orange-200: #fed7aa;
+  --orange-400: #fb923c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+  --orange-a15: #f9731626;
+
+  --green-50: #f0fdf4;
+  --green-200: #bbf7d0;
+  --green-400: #4ade80;
+  --green-700: #15803d;
+  --green-900: #14532d;
+  --green-a12: #22c55e1f;
+
+  --amber-50: #fffbeb;
+  --amber-200: #fde68a;
+  --amber-400: #fbbf24;
+  --amber-700: #b45309;
+  --amber-900: #78350f;
+  --amber-a12: #f59e0b1f;
+
+  --red-50: #fef2f2;
+  --red-200: #fecaca;
+  --red-400: #f87171;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-900: #7f1d1d;
+  --red-a12: #ef44441f;
+
+  --sky-50: #f0f9ff;
+  --sky-200: #bae6fd;
+  --sky-400: #38bdf8;
+  --sky-700: #0369a1;
+  --sky-900: #0c4a6e;
+  --sky-a12: #0ea5e91f;
+
+  /* Translucent white/black, for lines and hovers on dark (inverse) surfaces and overlays */
+  --white-a06: #ffffff0f;
+  --white-a12: #ffffff1f;
+  --white-a20: #ffffff33;
+  --white-a60: #ffffff99;
+  --white-a75: #ffffffbf;
+  --black-a08: #0000000a;
+  --black-a12: #0f172a1f;
+  --black-a40: #00000066;
+  --black-a60: #0b122099;
+}
+
+/*
+ * 2. Semantic tokens (blue accent, the default). Also declared on [data-theme]/[data-accent]
+ * elements so a nested preview re-resolves them: Tailwind compiles light-dark() into a polyfill
+ * that is fixed where the token is declared.
+ */
+:root,
+[data-theme],
+[data-accent] {
+  /* Surfaces (backgrounds) */
+  --surface: light-dark(var(--white), var(--slate-950));
+  --surface-soft: light-dark(var(--slate-50), var(--slate-875));
+  --surface-sunken: light-dark(var(--slate-100), var(--slate-850));
+  --surface-raised: light-dark(var(--white), var(--slate-875));
+  /* Always-dark panels (sidebars, interview room, footer), slightly lifted in dark mode */
+  --surface-inverse: light-dark(var(--slate-900), var(--slate-875));
+  --surface-inverse-soft: light-dark(var(--slate-800), var(--slate-850));
+  --overlay: var(--black-a60);
+
+  /* Text */
+  --text: light-dark(var(--slate-900), var(--slate-100));
+  --text-body: light-dark(var(--slate-700), var(--slate-300));
+  --text-muted: light-dark(var(--slate-500), var(--slate-400));
+  /* Placeholders and decoration only; not for text people must read */
+  --text-subtle: light-dark(var(--slate-400), var(--slate-500));
+  /* Text on surface-inverse, brand and solid status backgrounds */
+  --text-inverse: var(--white);
+  --text-inverse-muted: var(--white-a75);
+  --text-inverse-subtle: var(--white-a60);
+  /* Brand-coloured text on surface-inverse panels (light in both themes) */
+  --brand-on-inverse: var(--blue-300);
+
+  /* Borders */
+  --border: light-dark(var(--slate-200), var(--slate-925));
+  --border-soft: light-dark(var(--slate-100), var(--slate-850));
+  --border-strong: light-dark(var(--slate-300), var(--slate-700));
+  --line: var(--border);
+  --border-inverse: var(--white-a12);
+  --hover-inverse: var(--white-a06);
+
+  /* Brand: --brand is the primary action background, --brand-strong is brand-coloured text */
+  --brand: light-dark(var(--blue-700), var(--blue-600));
+  --brand-hover: light-dark(var(--blue-800), var(--blue-700));
+  --brand-strong: light-dark(var(--blue-700), var(--blue-300));
+  --brand-soft: light-dark(var(--blue-50), var(--blue-a15));
+  --brand-tint: light-dark(var(--blue-200), var(--blue-900));
+  --focus-ring: light-dark(var(--blue-600), var(--blue-300));
+
+  /* Status: text colour, -soft background, -border, -solid background (white text) */
+  --success: light-dark(var(--green-700), var(--green-400));
+  --success-soft: light-dark(var(--green-50), var(--green-a12));
+  --success-border: light-dark(var(--green-200), var(--green-900));
+  --success-solid: var(--green-700);
+  --warning: light-dark(var(--amber-700), var(--amber-400));
+  --warning-soft: light-dark(var(--amber-50), var(--amber-a12));
+  --warning-border: light-dark(var(--amber-200), var(--amber-900));
+  --warning-solid: var(--amber-700);
+  --danger: light-dark(var(--red-700), var(--red-400));
+  --danger-soft: light-dark(var(--red-50), var(--red-a12));
+  --danger-border: light-dark(var(--red-200), var(--red-900));
+  --danger-solid: light-dark(var(--red-700), var(--red-600));
+  --info: light-dark(var(--sky-700), var(--sky-400));
+  --info-soft: light-dark(var(--sky-50), var(--sky-a12));
+  --info-border: light-dark(var(--sky-200), var(--sky-900));
+
+  /* Deprecated names kept so existing var(--x) calls keep working. Don't use in new code. */
+  --ink: var(--text);
+  --navy: var(--surface-inverse);
+  --indigo: var(--brand);
+  --violet: var(--brand);
+  --cyan: var(--brand-tint);
+  --mint: var(--success);
+  --muted: var(--text-muted);
+  --soft: var(--surface-soft);
+}
+
+:root {
+  color-scheme: light dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* 3. Warm accent: ink actions, saffron highlights, stone neutrals */
+[data-accent="warm"] {
+  --surface: light-dark(var(--white), var(--stone-950));
+  --surface-soft: light-dark(var(--stone-50), var(--stone-875));
+  --surface-sunken: light-dark(var(--stone-100), var(--stone-850));
+  --surface-raised: light-dark(var(--white), var(--stone-875));
+  --surface-inverse: light-dark(var(--stone-900), var(--stone-875));
+  --surface-inverse-soft: light-dark(var(--stone-800), var(--stone-850));
+
+  --text: light-dark(var(--stone-900), var(--stone-50));
+  --text-body: light-dark(var(--stone-700), var(--stone-300));
+  --text-muted: light-dark(var(--stone-500), var(--stone-400));
+  --text-subtle: light-dark(var(--stone-400), var(--stone-500));
+
+  --border: light-dark(var(--stone-200), var(--stone-925));
+  --border-soft: light-dark(var(--stone-100), var(--stone-850));
+  --border-strong: light-dark(var(--stone-300), var(--stone-700));
+
+  --brand: light-dark(var(--stone-900), var(--orange-700));
+  --brand-hover: light-dark(var(--stone-700), var(--orange-800));
+  --brand-strong: light-dark(var(--orange-700), var(--orange-400));
+  --brand-soft: light-dark(var(--orange-50), var(--orange-a15));
+  --brand-tint: light-dark(var(--orange-200), var(--orange-900));
+  --focus-ring: light-dark(var(--orange-700), var(--orange-400));
+  --brand-on-inverse: var(--orange-400);
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --text-muted: var(--text-body);
+    --border: var(--border-strong);
+  }
+}
+
+/*
+ * 4. Typography. `static` keeps every variable in the output so styles.css can use
+ * var(--text-sm) etc. even when no Tailwind class does. In JSX: text-xs ... text-6xl,
+ * font-sans, font-display. Never write a px font size or a font name anywhere else.
+ */
+@theme static {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Manrope", system-ui, sans-serif;
+
+  /* Smallest allowed size: captions, badges, table meta */
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1.5;
+  /* Default UI text: buttons, inputs, tabs, table cells, nav */
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.5;
+  /* Body copy and large buttons */
+  --text-base: 1rem; /* 16px */
+  --text-base--line-height: 1.6;
+  /* Lead paragraphs, card titles */
+  --text-lg: 1.125rem; /* 18px */
+  --text-lg--line-height: 1.5;
+  /* Section sub-headings (h3) */
+  --text-xl: 1.25rem; /* 20px */
+  --text-xl--line-height: 1.4;
+  /* Page headings in portals (h2), KPI figures */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: 1.3;
+  /* Page headings (h1) */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-3xl--line-height: 1.25;
+  --text-4xl: 2.25rem; /* 36px */
+  --text-4xl--line-height: 1.2;
+  /* Marketing headlines only */
+  --text-5xl: 3rem; /* 48px */
+  --text-5xl--line-height: 1.1;
+  --text-6xl: 3.75rem; /* 60px */
+  --text-6xl--line-height: 1.05;
+}
+
+/* 5. Tailwind colour and elevation utilities (bg-*, text-*, border-*, ring-*, shadow-*) */
+@theme {
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-inverse-soft: var(--surface-inverse-soft);
+  --color-overlay: var(--overlay);
+
+  --color-ink: var(--text);
+  --color-body: var(--text-body);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-inverse: var(--text-inverse);
+  --color-inverse-muted: var(--text-inverse-muted);
+  --color-brand-on-inverse: var(--brand-on-inverse);
+
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
+  --color-line: var(--line);
+  --color-border-inverse: var(--border-inverse);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-tint: var(--brand-tint);
+  --color-focus: var(--focus-ring);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-border: var(--success-border);
+  --color-success-solid: var(--success-solid);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --color-warning-solid: var(--warning-solid);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-border: var(--danger-border);
+  --color-danger-solid: var(--danger-solid);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-border: var(--info-border);
+
+  /* Elevation: shadow-sm / shadow-md / shadow-lg, also var(--shadow-md) in CSS */
+  --shadow-sm: 0 1px 2px light-dark(var(--black-a08), var(--black-a40));
+  --shadow-md:
+    0 1px 2px light-dark(var(--black-a08), var(--black-a40)),
+    0 4px 12px light-dark(var(--black-a08), var(--black-a40));
+  --shadow-lg:
+    0 2px 4px light-dark(var(--black-a08), var(--black-a40)),
+    0 16px 32px light-dark(var(--black-a12), var(--black-a40));
+}

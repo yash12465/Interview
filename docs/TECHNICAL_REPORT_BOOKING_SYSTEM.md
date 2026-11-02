@@ -29,7 +29,7 @@ The system delivers:
 
 ```mermaid
 graph TD
-    ClientUI[InterviewSetu Next.js Frontend] -->|REST / API Client| BackendAPI[Express + Drizzle Backend :4000]
+    ClientUI[InterviewSetu Next.js Frontend] -->|REST / API Client| BackendAPI[Express + Drizzle Backend :40051]
     ClientUI -->|Supabase Client Auth| SupabaseAuth[Supabase Auth & Session]
     BackendAPI -->|Pooled Connection :6543| SupabasePG[(Supabase PostgreSQL Database)]
     

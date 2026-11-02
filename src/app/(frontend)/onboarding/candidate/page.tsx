@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { RippleButton } from '@/components/ui/RippleButton'
 
 export default function CandidateOnboardingPage() {
@@ -89,83 +89,80 @@ export default function CandidateOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between p-4 sm:p-8">
+    <div className="min-h-screen bg-surface-soft flex flex-col justify-between p-4 sm:p-8">
       <header className="max-w-3xl mx-auto w-full flex items-center justify-between py-4">
         <Link href="/" className="logo">
-          <span className="logo-mark"><i /><i /><i /></span>
-          <strong>Interview<span>Setu</span></strong>
+          <span className="logo-mark">
+            <i />
+            <i />
+            <i />
+          </span>
+          <strong>
+            Interview<span>Setu</span>
+          </strong>
         </Link>
-        <Link href="/app/candidate" className="text-xs text-zinc-500 hover:text-zinc-800 font-semibold">
+        <Link href="/app/candidate" className="text-xs text-muted hover:text-ink font-semibold">
           Skip to workspace →
         </Link>
       </header>
 
       <main className="max-w-2xl mx-auto w-full my-8">
-        <div className="bg-white p-7 sm:p-10 rounded-3xl border border-zinc-200/90 shadow-xl shadow-zinc-200/40">
+        <div className="bg-surface p-7 sm:p-10 rounded-3xl border border-border/90 shadow-lg">
           {/* Progress bar */}
           <div className="mb-6">
-            <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+            <div className="flex items-center justify-between text-xs font-bold text-subtle uppercase tracking-wider mb-2">
               <span>Step {step} of 6</span>
               <span>{Math.round((step / 6) * 100)}% Complete</span>
             </div>
-            <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-surface-sunken rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-violet-600 transition-all duration-300"
+                className="h-full bg-brand transition-all duration-300"
                 style={{ width: `${(step / 6) * 100}%` }}
               />
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
             {current.title}
           </h1>
-          <p className="text-sm text-zinc-500 mt-1 mb-6">
-            {current.sub}
-          </p>
+          <p className="text-sm text-muted mt-1 mb-6">{current.sub}</p>
 
           <div className="space-y-2.5">
-            {current.options.map((opt, idx) => (
+            {current.options.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => setChoice(opt)}
                 className={`w-full text-left p-4 rounded-2xl border text-xs sm:text-sm font-semibold transition-all flex items-center justify-between ${
                   choice === opt
-                    ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 shadow-sm'
-                    : 'border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700'
+                    ? 'border-brand bg-brand-soft/50 text-ink shadow-sm'
+                    : 'border-border bg-surface hover:border-border-strong text-body'
                 }`}
               >
                 <span>{opt}</span>
-                {choice === opt && (
-                  <span className="text-indigo-600 font-bold">✓</span>
-                )}
+                {choice === opt && <span className="text-brand-strong font-bold">✓</span>}
               </button>
             ))}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-zinc-100 flex items-center justify-between">
+          <div className="mt-8 pt-6 border-t border-border-soft flex items-center justify-between">
             <button
               type="button"
               disabled={step === 1}
               onClick={() => step > 1 && setStep(step - 1)}
-              className="text-xs font-bold text-zinc-500 disabled:opacity-30 hover:text-zinc-800"
+              className="text-xs font-bold text-muted disabled:opacity-30 hover:text-ink"
             >
               ← Back
             </button>
 
-            <RippleButton
-              variant="primary"
-              size="md"
-              disabled={!choice}
-              onClick={handleNext}
-            >
+            <RippleButton variant="primary" size="md" disabled={!choice} onClick={handleNext}>
               {step === 6 ? 'Complete Onboarding & Build Plan →' : 'Continue →'}
             </RippleButton>
           </div>
         </div>
       </main>
 
-      <footer className="text-center text-xs text-zinc-400 py-4">
+      <footer className="text-center text-xs text-subtle py-4">
         Your choices personalize your practice prompts. You can modify them anytime in Settings.
       </footer>
     </div>

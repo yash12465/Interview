@@ -244,11 +244,11 @@ All endpoints follow standard REST conventions, support strict HTTP methods, acc
 # 1. Install dependencies
 pnpm install
 
-# 2. Run development server (default port 3000)
-npm run dev
+# 2. Run development server (default port 40050)
+pnpm run dev
 
 # 3. Typecheck codebase
-npx tsc --noEmit
+pnpm run typecheck
 ```
 
 ### Git Repository

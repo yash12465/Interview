@@ -48,12 +48,23 @@ export function PrototypeProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [])
   useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(data)) } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(data))
+    } catch {}
     document.documentElement.dataset.reducedMotion = data.reducedMotion ? 'true' : 'false'
   }, [data])
   const update = (patch: Partial<PrototypeData>, event?: string) =>
-    setData(current => ({ ...current, ...patch, auditEvents: event ? [event, ...current.auditEvents].slice(0, 20) : current.auditEvents }))
-  const reset = () => { setData(initial); try { localStorage.removeItem(key) } catch {} }
+    setData((current) => ({
+      ...current,
+      ...patch,
+      auditEvents: event ? [event, ...current.auditEvents].slice(0, 20) : current.auditEvents,
+    }))
+  const reset = () => {
+    setData(initial)
+    try {
+      localStorage.removeItem(key)
+    } catch {}
+  }
   return <Context.Provider value={{ data, update, reset }}>{children}</Context.Provider>
 }
 

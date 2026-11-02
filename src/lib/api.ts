@@ -1,9 +1,13 @@
 // Thin client for interview-planner-backend (/api/v1).
 // Works in both server components and client components.
 
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace(/\/+$/, '')
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:40051').replace(
+  /\/+$/,
+  '',
+)
 
-export const apiUrl = (path: string) => `${API_BASE_URL}/api/v1${path.startsWith('/') ? path : `/${path}`}`
+export const apiUrl = (path: string) =>
+  `${API_BASE_URL}/api/v1${path.startsWith('/') ? path : `/${path}`}`
 
 type Envelope<T> = { success?: boolean; data?: T; error?: string }
 

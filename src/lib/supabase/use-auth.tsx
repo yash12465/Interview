@@ -1,15 +1,19 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { createClient } from './client'
+import type { Session, User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import type React from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { clearDemoRoleCookie } from '@/lib/demo-role'
+import type { UserRole } from '@/types'
+import type { UserRow } from '@/types/profile'
+import { createClient } from './client'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   role: 'candidate' | 'interviewer' | 'admin'
-  profile: any | null
+  profile: UserRow | null
   loading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -28,36 +32,42 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<any | null>(null)
+  const [profile, setProfile] = useState<UserRow | null>(null)
   const [role, setRole] = useState<'candidate' | 'interviewer' | 'admin'>('candidate')
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase] = useState(createClient)
 
-  const fetchProfile = async (currentUser: User) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', currentUser.id)
-        .maybeSingle()
+  const fetchProfile = useCallback(
+    async (currentUser: User) => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle()
 
-      if (data) {
-        setProfile(data)
-        setRole(data.role as 'candidate' | 'interviewer' | 'admin')
-      } else {
-        // Fallback to metadata if public.users is syncing
-        const metaRole = (currentUser.user_metadata?.role as any) || 'candidate'
-        setRole(metaRole)
+        if (error) console.warn('Profile lookup failed, using auth metadata:', error.message)
+        if (data) {
+          setProfile(data)
+          setRole(data.role)
+        } else {
+          // Fallback to metadata if public.users is syncing
+          const metaRole: UserRole = currentUser.user_metadata?.role || 'candidate'
+          setRole(metaRole)
+        }
+      } catch (e) {
+        console.error('Error fetching profile:', e)
       }
-    } catch (e) {
-      console.error('Error fetching profile:', e)
-    }
-  }
+    },
+    [supabase],
+  )
 
   useEffect(() => {
     async function initAuth() {
-      const { data: { session: initialSession } } = await supabase.auth.getSession()
+      const {
+        data: { session: initialSession },
+      } = await supabase.auth.getSession()
       setSession(initialSession)
       setUser(initialSession?.user ?? null)
       if (initialSession?.user) {
@@ -65,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false)
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
         setSession(newSession)
         setUser(newSession?.user ?? null)
         if (newSession?.user) {
@@ -83,11 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initAuth()
-  }, [])
+  }, [fetchProfile, supabase])
 
   const signOut = async () => {
     setLoading(true)
-    document.cookie = 'interviewsetu_demo_role=; path=/; max-age=0'
+    clearDemoRoleCookie()
     await supabase.auth.signOut()
     setUser(null)
     setSession(null)
@@ -103,7 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{ user, session, role, profile, loading, signOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -1,43 +1,45 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
+import { DEMO_ROLE_COOKIE } from '@/lib/demo-role'
+import { supabaseEnv } from './env'
 
 export async function updateSession(request: NextRequest) {
+  const { url, anonKey } = supabaseEnv()
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        for (const { name, value } of cookiesToSet) request.cookies.set(name, value)
+        supabaseResponse = NextResponse.next({
+          request,
+        })
+        for (const { name, value, options } of cookiesToSet)
+          supabaseResponse.cookies.set(name, value, options)
+      },
+    },
+  })
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const demoRole = request.cookies.get('interviewsetu_demo_role')?.value as
+  const demoRole = request.cookies.get(DEMO_ROLE_COOKIE)?.value as
     | 'candidate'
     | 'interviewer'
     | 'admin'
     | undefined
 
-  const effectiveUser = user || (demoRole ? { id: 'demo', email: 'demo@interviewsetu.com', user_metadata: { role: demoRole } } : null)
+  const effectiveUser =
+    user ||
+    (demoRole
+      ? { id: 'demo', email: 'demo@interviewsetu.com', user_metadata: { role: demoRole } }
+      : null)
   const path = request.nextUrl.pathname
 
   // Protected and Auth path rules
@@ -54,7 +56,7 @@ export async function updateSession(request: NextRequest) {
 
   // 2. Authenticated users trying to access login/register
   if (effectiveUser && isAuthPage) {
-    const role = (effectiveUser as any).user_metadata?.role || demoRole || 'candidate'
+    const role = effectiveUser.user_metadata?.role || demoRole || 'candidate'
     const url = request.nextUrl.clone()
     if (role === 'admin') {
       url.pathname = '/staff'
@@ -68,7 +70,7 @@ export async function updateSession(request: NextRequest) {
 
   // 3. Role-based isolation for protected routes
   if (effectiveUser && isProtectedPath) {
-    const role = (effectiveUser as any).user_metadata?.role || demoRole || 'candidate'
+    const role = effectiveUser.user_metadata?.role || demoRole || 'candidate'
 
     // Non-admins cannot access staff console
     if (path.startsWith('/staff') && role !== 'admin') {

@@ -1,24 +1,29 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { Ban, Search, TriangleAlert } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { getErrorMessage } from '@/lib/error-message'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/supabase/use-auth'
+import type { UserRow } from '@/types/profile'
 
 export function AdminUserManagement() {
   const { user: currentAdmin } = useAuth()
-  const supabase = createClient()
+  const [supabase] = useState(createClient)
 
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('All users')
   const [search, setSearch] = useState('')
-  const [detail, setDetail] = useState<any | null>(null)
-  const [drawerTab, setDrawerTab] = useState<'Overview' | 'Roles' | 'Profile' | 'Privacy'>('Overview')
+  const [detail, setDetail] = useState<UserRow | null>(null)
+  const [drawerTab, setDrawerTab] = useState<'Overview' | 'Roles' | 'Profile' | 'Privacy'>(
+    'Overview',
+  )
 
   // Action modal state
   const [actionModal, setActionModal] = useState<{
     type: 'suspend' | 'activate' | 'restrict'
-    targetUser: any
+    targetUser: UserRow
   } | null>(null)
   const [actionReason, setActionReason] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
@@ -29,7 +34,7 @@ export function AdminUserManagement() {
     setTimeout(() => setToastMessage(null), 3500)
   }
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -39,19 +44,19 @@ export function AdminUserManagement() {
 
       if (error) throw error
       setUsers(data || [])
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching users:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   // Filter users based on tab & search
-  const filtered = users.filter(u => {
+  const filtered = users.filter((u) => {
     const matches =
       !search ||
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -62,7 +67,8 @@ export function AdminUserManagement() {
     if (tab === 'Candidates') return u.role === 'candidate'
     if (tab === 'Interviewers') return u.role === 'interviewer'
     if (tab === 'Staff') return u.role === 'admin'
-    if (tab === 'Suspended / Restricted') return u.status === 'restricted' || u.status === 'suspended'
+    if (tab === 'Suspended / Restricted')
+      return u.status === 'restricted' || u.status === 'suspended'
     return true
   })
 
@@ -72,7 +78,8 @@ export function AdminUserManagement() {
     const { type, targetUser } = actionModal
     setActionLoading(true)
 
-    const nextStatus = type === 'suspend' ? 'suspended' : type === 'activate' ? 'active' : 'restricted'
+    const nextStatus =
+      type === 'suspend' ? 'suspended' : type === 'activate' ? 'active' : 'restricted'
 
     try {
       // 1. Update user status in Supabase
@@ -105,9 +112,9 @@ export function AdminUserManagement() {
         setDetail({ ...detail, status: nextStatus })
       }
       await fetchUsers()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Action error:', err)
-      alert(err?.message || 'Failed to update user status.')
+      alert(getErrorMessage(err, 'Failed to update user status.'))
     } finally {
       setActionLoading(false)
     }
@@ -119,20 +126,28 @@ export function AdminUserManagement() {
         <div className="app-title-text">
           <p>PEOPLE & ACCESS</p>
           <h1>User management</h1>
-          <span>View platform identities, assign permissions, audit activity and enforce safety suspensions.</span>
+          <span>
+            View platform identities, assign permissions, audit activity and enforce safety
+            suspensions.
+          </span>
         </div>
       </div>
 
       {toastMessage && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
+        <div className="mb-4 p-3.5 rounded-2xl bg-success-soft border border-success-border text-success text-xs font-semibold flex items-center justify-between">
           <span>✓ {toastMessage}</span>
         </div>
       )}
 
       {/* Tabs */}
       <div className="admin-tabs">
-        {['All users', 'Candidates', 'Interviewers', 'Staff', 'Suspended / Restricted'].map(x => (
-          <button className={tab === x ? 'active' : ''} onClick={() => setTab(x)} key={x}>
+        {['All users', 'Candidates', 'Interviewers', 'Staff', 'Suspended / Restricted'].map((x) => (
+          <button
+            type="button"
+            className={tab === x ? 'active' : ''}
+            onClick={() => setTab(x)}
+            key={x}
+          >
             {x}
           </button>
         ))}
@@ -141,16 +156,16 @@ export function AdminUserManagement() {
       {/* Filter / Search Bar */}
       <div className="admin-filters">
         <label>
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2">
-            <circle cx="11" cy="11" r="7" /><path d="m16 16 5 5" />
-          </svg>
+          <Search size={16} />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or user ID..."
           />
         </label>
-        <button onClick={() => setSearch('')}>Clear search</button>
+        <button type="button" onClick={() => setSearch('')}>
+          Clear search
+        </button>
       </div>
 
       {/* Table */}
@@ -166,38 +181,42 @@ export function AdminUserManagement() {
         </header>
 
         {loading ? (
-          <div className="p-8 text-center text-xs text-zinc-400">Loading platform users from Supabase...</div>
+          <div className="p-8 text-center text-xs text-subtle">
+            Loading platform users from Supabase...
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-zinc-400">No users found matching current filters.</div>
+          <div className="p-8 text-center text-xs text-subtle">
+            No users found matching current filters.
+          </div>
         ) : (
-          filtered.map(u => (
+          filtered.map((u) => (
             <button
               type="button"
               onClick={() => setDetail(u)}
               key={u.id}
-              className="text-left w-full hover:bg-slate-50 transition-colors"
+              className="text-left w-full hover:bg-surface-soft transition-colors"
             >
-              <span className="font-mono text-zinc-500 text-[11px]">{u.id.slice(0, 10)}...</span>
-              <span className="font-bold text-zinc-900">{u.name}</span>
-              <span className="text-zinc-500 font-mono text-[11px]">{u.email}</span>
-              <span className="capitalize font-semibold text-zinc-700">{u.role}</span>
+              <span className="font-mono text-muted text-xs">{u.id.slice(0, 10)}...</span>
+              <span className="font-bold text-ink">{u.name}</span>
+              <span className="text-muted font-mono text-xs">{u.email}</span>
+              <span className="capitalize font-semibold text-body">{u.role}</span>
               <span>
                 <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                     u.status === 'active'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      ? 'bg-success-soft text-success border border-success-border'
                       : u.status === 'suspended'
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                      : u.status === 'under_review'
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : 'bg-zinc-100 text-zinc-700'
+                        ? 'bg-danger-soft text-danger border border-danger-border'
+                        : u.status === 'under_review'
+                          ? 'bg-warning-soft text-warning border border-warning-border'
+                          : 'bg-surface-sunken text-body'
                   }`}
                 >
                   {u.status || 'active'}
                 </span>
               </span>
-              <span className="text-zinc-400 text-xs">{u.last_active || 'Recent'}</span>
-              <b className="text-zinc-400">•••</b>
+              <span className="text-subtle text-xs">{u.last_active || 'Recent'}</span>
+              <b className="text-subtle">•••</b>
             </button>
           ))
         )}
@@ -216,7 +235,7 @@ export function AdminUserManagement() {
                 .toUpperCase()}
             </div>
             <div>
-              <span className="font-mono text-[10px] text-zinc-400">{detail.id}</span>
+              <span className="font-mono text-xs text-subtle">{detail.id}</span>
               <h2>{detail.name}</h2>
               <p>
                 {detail.role.toUpperCase()} · <b className="capitalize">{detail.status}</b>
@@ -228,8 +247,9 @@ export function AdminUserManagement() {
           </header>
 
           <div className="admin-tabs">
-            {(['Overview', 'Roles', 'Profile', 'Privacy'] as const).map(t => (
+            {(['Overview', 'Roles', 'Profile', 'Privacy'] as const).map((t) => (
               <button
+                type="button"
                 key={t}
                 className={drawerTab === t ? 'active' : ''}
                 onClick={() => setDrawerTab(t)}
@@ -270,7 +290,7 @@ export function AdminUserManagement() {
                 <dl>
                   <div>
                     <dt>Primary Role</dt>
-                    <dd className="capitalize font-bold text-zinc-900">{detail.role}</dd>
+                    <dd className="capitalize font-bold text-ink">{detail.role}</dd>
                   </div>
                   <div>
                     <dt>Account Status</dt>
@@ -314,21 +334,24 @@ export function AdminUserManagement() {
                         <dt>Resume File</dt>
                         <dd>
                           {detail.candidate_profile?.resume ? (
-                            <span className="text-emerald-700 font-bold">
+                            <span className="text-success font-bold">
                               ✓ {detail.candidate_profile.resume.fileName}
                             </span>
                           ) : (
-                            <span className="text-zinc-400">None uploaded</span>
+                            <span className="text-subtle">None uploaded</span>
                           )}
                         </dd>
                       </div>
                     </dl>
                     {detail.candidate_profile?.skills && (
                       <div className="pt-2">
-                        <b className="block text-zinc-700 mb-1">Listed Skills:</b>
+                        <b className="block text-body mb-1">Listed Skills:</b>
                         <div className="flex flex-wrap gap-1">
                           {detail.candidate_profile.skills.map((s: string) => (
-                            <span key={s} className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 text-[10px]">
+                            <span
+                              key={s}
+                              className="px-2 py-0.5 rounded bg-surface-sunken text-ink text-xs"
+                            >
                               {s}
                             </span>
                           ))}
@@ -346,7 +369,9 @@ export function AdminUserManagement() {
                       </div>
                       <div>
                         <dt>Category</dt>
-                        <dd className="capitalize">{detail.interviewer_profile?.category || 'Professional'}</dd>
+                        <dd className="capitalize">
+                          {detail.interviewer_profile?.category || 'Professional'}
+                        </dd>
                       </div>
                       <div>
                         <dt>Experience</dt>
@@ -380,7 +405,7 @@ export function AdminUserManagement() {
                   </div>
                   <div>
                     <dt>Private Storage Path</dt>
-                    <dd className="font-mono text-[10px]">{detail.id}/...</dd>
+                    <dd className="font-mono text-xs">{detail.id}/...</dd>
                   </div>
                   <div>
                     <dt>Session Audit</dt>
@@ -395,7 +420,7 @@ export function AdminUserManagement() {
               <button
                 type="button"
                 onClick={() => setActionModal({ type: 'activate', targetUser: detail })}
-                className="bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
+                className="bg-success-soft text-success hover:bg-success-border/40 border border-success-border"
               >
                 ✓ Activate Account
               </button>
@@ -404,44 +429,55 @@ export function AdminUserManagement() {
                 <button
                   type="button"
                   onClick={() => setActionModal({ type: 'restrict', targetUser: detail })}
-                  className="bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
+                  className="bg-warning-soft text-warning hover:bg-warning-border/40 border border-warning-border"
                 >
-                  ⚠️ Restrict Access
+                  <TriangleAlert size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+                  Restrict Access
                 </button>
                 <button
                   type="button"
                   onClick={() => setActionModal({ type: 'suspend', targetUser: detail })}
-                  className="bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200"
+                  className="bg-danger-soft text-danger hover:bg-danger-border/40 border border-danger-border"
                 >
-                  ⛔ Suspend Account
+                  <Ban size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+                  Suspend Account
                 </button>
               </>
             )}
-            <small>All governance actions are logged to the platform append-only audit trail.</small>
+            <small>
+              All governance actions are logged to the platform append-only audit trail.
+            </small>
           </section>
         </div>
       )}
 
       {/* Action Reason Confirmation Modal */}
       {actionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-zinc-200">
-            <h3 className="text-base font-bold text-zinc-900 mb-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/60 backdrop-blur-xs">
+          <div className="bg-surface rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-lg border border-border">
+            <h3 className="text-base font-bold text-ink mb-1">
               Confirm {actionModal.type.toUpperCase()} Action
             </h3>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-muted mb-4">
               You are modifying the platform status for{' '}
-              <strong className="text-zinc-800">{actionModal.targetUser.name}</strong> ({actionModal.targetUser.email}).
+              <strong className="text-ink">{actionModal.targetUser.name}</strong> (
+              {actionModal.targetUser.email}).
             </p>
 
-            <label className="font-bold text-xs text-zinc-700 block mb-1">Reason / Internal Compliance Note</label>
+            <label
+              htmlFor="admin-user-management-reason-internal-compliance-note"
+              className="font-bold text-xs text-body block mb-1"
+            >
+              Reason / Internal Compliance Note
+            </label>
             <textarea
+              id="admin-user-management-reason-internal-compliance-note"
               rows={3}
               required
               value={actionReason}
-              onChange={e => setActionReason(e.target.value)}
+              onChange={(e) => setActionReason(e.target.value)}
               placeholder="Required for platform audit trail (e.g. Terms violation, candidate grievance, identity re-verification)..."
-              className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs focus:border-indigo-500 focus:outline-none mb-4"
+              className="w-full px-3 py-2 rounded-xl border border-border text-xs focus:border-brand focus:outline-none mb-4"
             />
 
             <div className="flex justify-end gap-2">
@@ -451,7 +487,7 @@ export function AdminUserManagement() {
                   setActionModal(null)
                   setActionReason('')
                 }}
-                className="px-3.5 py-2 rounded-xl text-zinc-600 hover:bg-zinc-100 font-semibold text-xs"
+                className="px-3.5 py-2 rounded-xl text-body hover:bg-surface-sunken font-semibold text-xs"
               >
                 Cancel
               </button>
@@ -459,12 +495,12 @@ export function AdminUserManagement() {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleConfirmAction}
-                className={`px-4 py-2 rounded-xl text-white font-bold text-xs ${
+                className={`px-4 py-2 rounded-xl text-inverse font-bold text-xs ${
                   actionModal.type === 'suspend'
-                    ? 'bg-rose-600 hover:bg-rose-700'
+                    ? 'bg-danger-solid hover:bg-danger-solid/90'
                     : actionModal.type === 'activate'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-amber-600 hover:bg-amber-700'
+                      ? 'bg-success-solid hover:bg-success-solid/90'
+                      : 'bg-warning-solid hover:bg-warning-solid/90'
                 }`}
               >
                 {actionLoading ? 'Applying...' : `Confirm ${actionModal.type.toUpperCase()}`}

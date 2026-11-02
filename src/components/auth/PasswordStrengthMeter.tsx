@@ -1,7 +1,5 @@
 'use client'
 
-import React from 'react'
-
 export interface PasswordStrengthMeterProps {
   password: string
 }
@@ -22,25 +20,25 @@ export function checkPasswordStrength(password: string) {
   if (checks.special) score++
 
   let label = 'Very Weak'
-  let color = 'bg-rose-500'
-  let textColor = 'text-rose-600'
+  let color = 'bg-danger-solid'
+  let textColor = 'text-danger'
 
   if (score === 1) {
     label = 'Weak'
-    color = 'bg-rose-500'
-    textColor = 'text-rose-600'
+    color = 'bg-danger-solid'
+    textColor = 'text-danger'
   } else if (score === 2) {
     label = 'Fair'
-    color = 'bg-amber-500'
-    textColor = 'text-amber-600'
+    color = 'bg-warning-solid'
+    textColor = 'text-warning'
   } else if (score === 3) {
     label = 'Good'
-    color = 'bg-blue-500'
-    textColor = 'text-blue-600'
+    color = 'bg-brand'
+    textColor = 'text-brand-strong'
   } else if (score === 4) {
     label = 'Strong'
-    color = 'bg-emerald-500'
-    textColor = 'text-emerald-600'
+    color = 'bg-success-solid'
+    textColor = 'text-success'
   }
 
   return { score, label, color, textColor, checks }
@@ -53,33 +51,33 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
 
   return (
     <div className="mt-2 space-y-1.5 text-left">
-      <div className="flex items-center justify-between text-[11px] font-semibold">
-        <span className="text-zinc-500">Password Strength:</span>
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span className="text-muted">Password Strength:</span>
         <span className={textColor}>{label}</span>
       </div>
 
       <div className="grid grid-cols-4 gap-1.5 h-1.5">
-        {[1, 2, 3, 4].map(idx => (
+        {[1, 2, 3, 4].map((idx) => (
           <div
             key={idx}
             className={`h-full rounded-full transition-all duration-300 ${
-              score >= idx ? color : 'bg-zinc-200'
+              score >= idx ? color : 'bg-surface-sunken'
             }`}
           />
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1 text-[10px] text-zinc-500">
-        <span className={checks.length ? 'text-emerald-600 font-medium' : ''}>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1 text-xs text-muted">
+        <span className={checks.length ? 'text-success font-medium' : ''}>
           {checks.length ? '✓' : '•'} At least 8 characters
         </span>
-        <span className={checks.lowercase && checks.uppercase ? 'text-emerald-600 font-medium' : ''}>
+        <span className={checks.lowercase && checks.uppercase ? 'text-success font-medium' : ''}>
           {checks.lowercase && checks.uppercase ? '✓' : '•'} Upper & lowercase
         </span>
-        <span className={checks.number ? 'text-emerald-600 font-medium' : ''}>
+        <span className={checks.number ? 'text-success font-medium' : ''}>
           {checks.number ? '✓' : '•'} At least 1 number
         </span>
-        <span className={checks.special ? 'text-emerald-600 font-medium' : ''}>
+        <span className={checks.special ? 'text-success font-medium' : ''}>
           {checks.special ? '✓' : '•'} Special symbol
         </span>
       </div>

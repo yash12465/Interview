@@ -1,3 +1,5 @@
+import type { UserRole } from './index'
+
 export interface EducationEntry {
   id: string
   institution: string
@@ -60,7 +62,14 @@ export interface InterviewerProfileData {
   languages?: string[]
   bio?: string
   hourlyRate?: number
-  verificationStatus?: 'draft' | 'submitted' | 'under_review' | 'needs_information' | 'approved' | 'rejected' | 'suspended'
+  verificationStatus?:
+    | 'draft'
+    | 'submitted'
+    | 'under_review'
+    | 'needs_information'
+    | 'approved'
+    | 'rejected'
+    | 'suspended'
   verificationBadge?: boolean
   evidenceDocument?: VerificationDocumentMeta | null
   certificates?: VerificationDocumentMeta[]
@@ -73,4 +82,21 @@ export interface InterviewerProfileData {
   pendingPayout?: number
   rejectionReason?: string
   adminNotes?: string
+}
+
+// A row of public.users as Supabase returns it (snake_case columns; profiles are jsonb).
+// Mirrors the backend's drizzle schema for the users table.
+export interface UserRow {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  avatar: string | null
+  // 'under_review' is written by InterviewerProfileEditor when an interviewer submits for review.
+  status: 'active' | 'restricted' | 'suspended' | 'under_review'
+  email_verified: boolean
+  created_at: string
+  last_active: string
+  candidate_profile: CandidateProfileData | null
+  interviewer_profile: InterviewerProfileData | null
 }

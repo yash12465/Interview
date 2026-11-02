@@ -1,19 +1,24 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { FileText, Search } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { getErrorMessage } from '@/lib/error-message'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/supabase/use-auth'
 import { getSignedUrl } from '@/lib/supabase/storage'
+import { useAuth } from '@/lib/supabase/use-auth'
+import type { UserRow } from '@/types/profile'
 
 export function AdminVerificationQueue() {
   const { user: currentAdmin } = useAuth()
-  const supabase = createClient()
+  const [supabase] = useState(createClient)
 
-  const [applicants, setApplicants] = useState<any[]>([])
+  const [applicants, setApplicants] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tab, setTab] = useState('New / Under Review')
-  const [appTab, setAppTab] = useState<'Application' | 'Evidence' | 'Profile' | 'Services'>('Application')
+  const [appTab, setAppTab] = useState<'Application' | 'Evidence' | 'Profile' | 'Services'>(
+    'Application',
+  )
   const [search, setSearch] = useState('')
 
   // Modal actions
@@ -31,7 +36,7 @@ export function AdminVerificationQueue() {
     setTimeout(() => setToastMessage(null), 3500)
   }
 
-  const fetchApplicants = async () => {
+  const fetchApplicants = useCallback(async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -42,22 +47,21 @@ export function AdminVerificationQueue() {
 
       if (error) throw error
       setApplicants(data || [])
-      if (data && data.length > 0 && !selectedId) {
-        setSelectedId(data[0].id)
-      }
-    } catch (err: any) {
+      // Keep the current selection on refresh; default to the newest applicant.
+      if (data && data.length > 0) setSelectedId((current) => current ?? data[0].id)
+    } catch (err) {
       console.error('Error fetching verification queue:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     fetchApplicants()
-  }, [])
+  }, [fetchApplicants])
 
   // Filter applicants
-  const filtered = applicants.filter(a => {
+  const filtered = applicants.filter((a) => {
     const vStatus = a.interviewer_profile?.verificationStatus || a.status || 'under_review'
     const matchesSearch =
       !search ||
@@ -75,7 +79,7 @@ export function AdminVerificationQueue() {
     return true
   })
 
-  const selected = applicants.find(a => a.id === selectedId) || filtered[0] || null
+  const selected = applicants.find((a) => a.id === selectedId) || filtered[0] || null
 
   // Fetch signed URL for document preview
   const handleOpenDocPreview = async (docPath?: string, docName?: string) => {
@@ -153,9 +157,9 @@ export function AdminVerificationQueue() {
       setActionType(null)
       setActionReason('')
       await fetchApplicants()
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error updating verification status:', err)
-      alert(err?.message || 'Failed to update verification status.')
+      alert(getErrorMessage(err, 'Failed to update verification status.'))
     } finally {
       setActionLoading(false)
     }
@@ -167,45 +171,55 @@ export function AdminVerificationQueue() {
         <div className="app-title-text">
           <p>TRUST & SAFETY COMPLIANCE</p>
           <h1>Interviewer Verification Queue</h1>
-          <span>Examine credentials, inspect private evidence documents, and grant or revoke mock interview rights.</span>
+          <span>
+            Examine credentials, inspect private evidence documents, and grant or revoke mock
+            interview rights.
+          </span>
         </div>
       </div>
 
       {toastMessage && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
+        <div className="mb-4 p-3.5 rounded-2xl bg-success-soft border border-success-border text-success text-xs font-semibold flex items-center justify-between">
           <span>✓ {toastMessage}</span>
         </div>
       )}
 
       {/* Tabs */}
       <div className="admin-tabs">
-        {['New / Under Review', 'Needs Information', 'Approved', 'Rejected', 'All Applicants'].map(x => (
-          <button className={tab === x ? 'active' : ''} onClick={() => setTab(x)} key={x}>
-            {x}
-          </button>
-        ))}
+        {['New / Under Review', 'Needs Information', 'Approved', 'Rejected', 'All Applicants'].map(
+          (x) => (
+            <button
+              type="button"
+              className={tab === x ? 'active' : ''}
+              onClick={() => setTab(x)}
+              key={x}
+            >
+              {x}
+            </button>
+          ),
+        )}
       </div>
 
       <div className="verification-workspace">
         {/* Left Sidebar List */}
         <aside>
           <label>
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" /><path d="m16 16 5 5" />
-            </svg>
+            <Search size={16} />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search applicants..."
             />
           </label>
 
           {loading ? (
-            <div className="p-4 text-xs text-zinc-400 text-center">Loading queue...</div>
+            <div className="p-4 text-xs text-subtle text-center">Loading queue...</div>
           ) : filtered.length === 0 ? (
-            <div className="p-4 text-xs text-zinc-400 text-center">No applicants found in this category.</div>
+            <div className="p-4 text-xs text-subtle text-center">
+              No applicants found in this category.
+            </div>
           ) : (
-            filtered.map(app => {
+            filtered.map((app) => {
               const initials = app.name
                 .split(' ')
                 .map((n: string) => n[0])
@@ -213,7 +227,8 @@ export function AdminVerificationQueue() {
                 .slice(0, 2)
                 .toUpperCase()
               const isSelected = selected?.id === app.id
-              const vStatus = app.interviewer_profile?.verificationStatus || app.status || 'under_review'
+              const vStatus =
+                app.interviewer_profile?.verificationStatus || app.status || 'under_review'
 
               return (
                 <button
@@ -226,16 +241,17 @@ export function AdminVerificationQueue() {
                   <div>
                     <b>{app.name}</b>
                     <small>
-                      {app.interviewer_profile?.category || 'Professional'} · {app.interviewer_profile?.experienceYears || '6+ yrs'}
+                      {app.interviewer_profile?.category || 'Professional'} ·{' '}
+                      {app.interviewer_profile?.experienceYears || '6+ yrs'}
                     </small>
                   </div>
                   <em
-                    className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                    className={`text-xs px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
                       vStatus === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-success-soft text-success'
                         : vStatus === 'rejected'
-                        ? 'bg-rose-100 text-rose-800'
-                        : 'bg-amber-100 text-amber-800'
+                          ? 'bg-danger-soft text-danger'
+                          : 'bg-warning-soft text-warning'
                     }`}
                   >
                     {vStatus}
@@ -259,20 +275,21 @@ export function AdminVerificationQueue() {
                   .toUpperCase()}
               </div>
               <div>
-                <span className="font-mono text-[10px] text-zinc-400">APPLICATION {selected.id}</span>
+                <span className="font-mono text-xs text-subtle">APPLICATION {selected.id}</span>
                 <h2>{selected.name}</h2>
                 <p>
                   {selected.interviewer_profile?.title || 'Professional Mentor'} · {selected.email}
                 </p>
               </div>
-              <em className="text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-slate-100 text-zinc-700">
+              <em className="text-xs uppercase font-bold tracking-wider px-3 py-1 rounded-full bg-surface-sunken text-body">
                 {selected.interviewer_profile?.verificationStatus || 'UNDER REVIEW'}
               </em>
             </header>
 
             <div className="admin-tabs">
-              {(['Application', 'Evidence', 'Profile', 'Services'] as const).map(t => (
+              {(['Application', 'Evidence', 'Profile', 'Services'] as const).map((t) => (
                 <button
+                  type="button"
                   key={t}
                   className={appTab === t ? 'active' : ''}
                   onClick={() => setAppTab(t)}
@@ -295,7 +312,9 @@ export function AdminVerificationQueue() {
                       </div>
                       <div>
                         <dt>Category</dt>
-                        <dd className="capitalize">{selected.interviewer_profile?.category || 'Professional'}</dd>
+                        <dd className="capitalize">
+                          {selected.interviewer_profile?.category || 'Professional'}
+                        </dd>
                       </div>
                       <div>
                         <dt>Experience</dt>
@@ -304,7 +323,8 @@ export function AdminVerificationQueue() {
                       <div>
                         <dt>Selected Domains</dt>
                         <dd>
-                          {selected.interviewer_profile?.domains?.join(', ') || 'Software Engineering, Project Defence'}
+                          {selected.interviewer_profile?.domains?.join(', ') ||
+                            'Software Engineering, Project Defence'}
                         </dd>
                       </div>
                     </dl>
@@ -312,31 +332,42 @@ export function AdminVerificationQueue() {
 
                   <div className="public-claim">
                     <span>BIO & INTERVIEW PHILOSOPHY</span>
-                    <p>“{selected.interviewer_profile?.bio || 'I help early-career candidates build answer frameworks and reason through technical follow-ups.'}”</p>
+                    <p>
+                      “
+                      {selected.interviewer_profile?.bio ||
+                        'I help early-career candidates build answer frameworks and reason through technical follow-ups.'}
+                      ”
+                    </p>
                   </div>
                 </div>
               )}
 
               {/* TAB 2: EVIDENCE DOCUMENTS */}
               {appTab === 'Evidence' && (
-                <div className="p-5 rounded-2xl bg-slate-50 border border-zinc-200 space-y-4">
+                <div className="p-5 rounded-2xl bg-surface-soft border border-border space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-zinc-900">Submitted Proof of Credentials</h3>
-                    <p className="text-xs text-zinc-500">
-                      Private storage objects from the <code className="font-mono bg-zinc-200/60 px-1 rounded">verification_documents</code> bucket.
+                    <h3 className="text-sm font-bold text-ink">Submitted Proof of Credentials</h3>
+                    <p className="text-xs text-muted">
+                      Private storage objects from the{' '}
+                      <code className="font-mono bg-surface-sunken/60 px-1 rounded">
+                        verification_documents
+                      </code>{' '}
+                      bucket.
                     </p>
                   </div>
 
                   {/* Primary Evidence Document */}
-                  <div className="p-3.5 rounded-xl bg-white border border-zinc-200 flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl bg-surface border border-border flex items-center justify-between">
                     <div>
-                      <b className="text-xs text-zinc-900 block font-semibold">
+                      <b className="text-xs text-ink block font-semibold">
                         {selected.interviewer_profile?.evidenceDocument?.fileName ||
                           selected.interviewer_profile?.evidenceDocumentName ||
                           'employment_verification_letter.pdf'}
                       </b>
-                      <small className="text-[11px] text-zinc-400 block font-mono">
-                        Protected Storage Path: {selected.interviewer_profile?.evidenceDocument?.path || `${selected.id}/evidence`}
+                      <small className="text-xs text-subtle block font-mono">
+                        Protected Storage Path:{' '}
+                        {selected.interviewer_profile?.evidenceDocument?.path ||
+                          `${selected.id}/evidence`}
                       </small>
                     </div>
 
@@ -345,69 +376,85 @@ export function AdminVerificationQueue() {
                       onClick={() =>
                         handleOpenDocPreview(
                           selected.interviewer_profile?.evidenceDocument?.path,
-                          selected.interviewer_profile?.evidenceDocument?.fileName || selected.interviewer_profile?.evidenceDocumentName
+                          selected.interviewer_profile?.evidenceDocument?.fileName ||
+                            selected.interviewer_profile?.evidenceDocumentName,
                         )
                       }
-                      className="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 text-xs font-bold"
+                      className="px-3 py-1.5 rounded-xl bg-brand-soft border border-brand-tint hover:bg-brand-tint/40 text-brand-strong text-xs font-bold"
                     >
                       Inspect Document ↗
                     </button>
                   </div>
 
                   {/* Additional Certificates */}
-                  {selected.interviewer_profile?.certificates && selected.interviewer_profile.certificates.length > 0 && (
-                    <div className="pt-2">
-                      <span className="text-[11px] font-bold text-zinc-600 block mb-2">Attached Certificates</span>
-                      <div className="space-y-2">
-                        {selected.interviewer_profile.certificates.map((cert: any) => (
-                          <div
-                            key={cert.fileName}
-                            className="p-3 rounded-xl bg-white border border-zinc-200 flex items-center justify-between text-xs"
-                          >
-                            <span>📜 {cert.fileName}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDocPreview(cert.path, cert.fileName)}
-                              className="text-xs text-indigo-600 font-bold hover:underline"
+                  {selected.interviewer_profile?.certificates &&
+                    selected.interviewer_profile.certificates.length > 0 && (
+                      <div className="pt-2">
+                        <span className="text-xs font-bold text-body block mb-2">
+                          Attached Certificates
+                        </span>
+                        <div className="space-y-2">
+                          {selected.interviewer_profile.certificates.map((cert) => (
+                            <div
+                              key={cert.fileName}
+                              className="p-3 rounded-xl bg-surface border border-border flex items-center justify-between text-xs"
                             >
-                              Inspect ↗
-                            </button>
-                          </div>
-                        ))}
+                              <span>
+                                <FileText
+                                  size={16}
+                                  style={{ verticalAlign: '-3px', marginRight: 6 }}
+                                />
+                                {cert.fileName}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDocPreview(cert.path, cert.fileName)}
+                                className="text-xs text-brand-strong font-bold hover:underline"
+                              >
+                                Inspect ↗
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
 
               {/* TAB 3: PUBLIC PROFILE PREVIEW */}
               {appTab === 'Profile' && (
-                <div className="p-5 rounded-2xl bg-slate-50 border border-zinc-200 space-y-3 text-xs leading-relaxed">
-                  <h3 className="text-sm font-bold text-zinc-900">Public Mentor Directory Listing</h3>
+                <div className="p-5 rounded-2xl bg-surface-soft border border-border space-y-3 text-xs leading-relaxed">
+                  <h3 className="text-sm font-bold text-ink">Public Mentor Directory Listing</h3>
                   <p>
-                    <b className="text-zinc-800">Headline:</b> {selected.interviewer_profile?.headline || 'Technical mock interviews, architecture deep dives & project defence'}
+                    <b className="text-ink">Headline:</b>{' '}
+                    {selected.interviewer_profile?.headline ||
+                      'Technical mock interviews, architecture deep dives & project defence'}
                   </p>
                   <p>
-                    <b className="text-zinc-800">Bio:</b> {selected.interviewer_profile?.bio}
+                    <b className="text-ink">Bio:</b> {selected.interviewer_profile?.bio}
                   </p>
                   <p>
-                    <b className="text-zinc-800">Languages:</b> {selected.interviewer_profile?.languages?.join(', ') || 'English, Hindi'}
+                    <b className="text-ink">Languages:</b>{' '}
+                    {selected.interviewer_profile?.languages?.join(', ') || 'English, Hindi'}
                   </p>
                 </div>
               )}
 
               {/* TAB 4: SERVICES & PRICING */}
               {appTab === 'Services' && (
-                <div className="p-5 rounded-2xl bg-slate-50 border border-zinc-200 space-y-3 text-xs leading-relaxed">
-                  <h3 className="text-sm font-bold text-zinc-900">Proposed Pricing Structure</h3>
+                <div className="p-5 rounded-2xl bg-surface-soft border border-border space-y-3 text-xs leading-relaxed">
+                  <h3 className="text-sm font-bold text-ink">Proposed Pricing Structure</h3>
                   <p>
-                    <b className="text-zinc-800">Hourly Rate:</b> ₹{selected.interviewer_profile?.hourlyRate || 1199} / session
+                    <b className="text-ink">Hourly Rate:</b> ₹
+                    {selected.interviewer_profile?.hourlyRate || 1199} / session
                   </p>
                   <p>
-                    <b className="text-zinc-800">45-min Mock Session:</b> ₹{Math.round((selected.interviewer_profile?.hourlyRate || 1199) * 0.75)}
+                    <b className="text-ink">45-min Mock Session:</b> ₹
+                    {Math.round((selected.interviewer_profile?.hourlyRate || 1199) * 0.75)}
                   </p>
                   <p>
-                    <b className="text-zinc-800">Net Interviewer Payout (80%):</b> ₹{Math.round((selected.interviewer_profile?.hourlyRate || 1199) * 0.75 * 0.8)}
+                    <b className="text-ink">Net Interviewer Payout (80%):</b> ₹
+                    {Math.round((selected.interviewer_profile?.hourlyRate || 1199) * 0.75 * 0.8)}
                   </p>
                 </div>
               )}
@@ -418,57 +465,63 @@ export function AdminVerificationQueue() {
               <button
                 type="button"
                 onClick={() => setActionType('needs_info')}
-                className="px-3.5 py-2 rounded-xl text-zinc-700 bg-zinc-100 hover:bg-zinc-200 text-xs font-bold"
+                className="px-3.5 py-2 rounded-xl text-body bg-surface-sunken hover:bg-border text-xs font-bold"
               >
                 Request More Information
               </button>
               <button
                 type="button"
                 onClick={() => setActionType('reject')}
-                className="px-3.5 py-2 rounded-xl text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-bold"
+                className="px-3.5 py-2 rounded-xl text-danger bg-danger-soft hover:bg-danger-border/40 border border-danger-border text-xs font-bold"
               >
                 Reject Application
               </button>
               <button
                 type="button"
                 onClick={() => setActionType('approve')}
-                className="px-4 py-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 text-xs font-bold shadow-xs"
+                className="px-4 py-2 rounded-xl text-inverse bg-brand hover:bg-brand-hover text-xs font-bold shadow-xs"
               >
                 ✓ Approve Interviewer Application
               </button>
             </footer>
           </main>
         ) : (
-          <div className="p-12 text-center text-xs text-zinc-400">Select an applicant to review.</div>
+          <div className="p-12 text-center text-xs text-subtle">Select an applicant to review.</div>
         )}
       </div>
 
       {/* Decision Reason Confirmation Modal */}
       {actionType && selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-zinc-200">
-            <h3 className="text-base font-bold text-zinc-900 mb-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/60 backdrop-blur-xs">
+          <div className="bg-surface rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-lg border border-border">
+            <h3 className="text-base font-bold text-ink mb-1">
               {actionType === 'approve'
                 ? `Approve ${selected.name}`
                 : actionType === 'reject'
-                ? `Reject Application for ${selected.name}`
-                : `Request Additional Proof from ${selected.name}`}
+                  ? `Reject Application for ${selected.name}`
+                  : `Request Additional Proof from ${selected.name}`}
             </h3>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-muted mb-4">
               {actionType === 'approve'
                 ? 'Approving activates their public profile in the mentor directory and grants permission to conduct paid mock interviews.'
                 : actionType === 'reject'
-                ? 'Specify the rejection reason so the applicant understands which verification criteria were not fulfilled.'
-                : 'State what additional documentation or clarity is required.'}
+                  ? 'Specify the rejection reason so the applicant understands which verification criteria were not fulfilled.'
+                  : 'State what additional documentation or clarity is required.'}
             </p>
 
-            <label className="font-bold text-xs text-zinc-700 block mb-1">Audit Trail & Reviewer Note</label>
+            <label
+              htmlFor="admin-verification-queue-audit-trail-reviewer-note"
+              className="font-bold text-xs text-body block mb-1"
+            >
+              Audit Trail & Reviewer Note
+            </label>
             <textarea
+              id="admin-verification-queue-audit-trail-reviewer-note"
               rows={3}
               value={actionReason}
-              onChange={e => setActionReason(e.target.value)}
+              onChange={(e) => setActionReason(e.target.value)}
               placeholder="e.g. Credentials matched company directory; approved for Software Engineering and System Design rounds..."
-              className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs focus:border-indigo-500 focus:outline-none mb-4"
+              className="w-full px-3 py-2 rounded-xl border border-border text-xs focus:border-brand focus:outline-none mb-4"
             />
 
             <div className="flex justify-end gap-2">
@@ -478,7 +531,7 @@ export function AdminVerificationQueue() {
                   setActionType(null)
                   setActionReason('')
                 }}
-                className="px-3.5 py-2 rounded-xl text-zinc-600 hover:bg-zinc-100 font-semibold text-xs"
+                className="px-3.5 py-2 rounded-xl text-body hover:bg-surface-sunken font-semibold text-xs"
               >
                 Cancel
               </button>
@@ -486,12 +539,12 @@ export function AdminVerificationQueue() {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleExecuteVerification}
-                className={`px-4 py-2 rounded-xl text-white font-bold text-xs ${
+                className={`px-4 py-2 rounded-xl text-inverse font-bold text-xs ${
                   actionType === 'approve'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    ? 'bg-success-solid hover:bg-success-solid/90'
                     : actionType === 'reject'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-amber-600 hover:bg-amber-700'
+                      ? 'bg-danger-solid hover:bg-danger-solid/90'
+                      : 'bg-warning-solid hover:bg-warning-solid/90'
                 }`}
               >
                 {actionLoading ? 'Processing...' : `Confirm ${actionType.toUpperCase()}`}
@@ -503,14 +556,14 @@ export function AdminVerificationQueue() {
 
       {/* Document Preview Modal */}
       {previewDocName && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/70 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-zinc-200">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-inverse/70 backdrop-blur-xs">
+          <div className="bg-surface rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-lg border border-border">
+            <div className="flex items-center justify-between pb-3 border-b border-border-soft mb-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 block">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-strong block">
                   Private Evidence Inspection
                 </span>
-                <h3 className="text-sm font-bold text-zinc-900">{previewDocName}</h3>
+                <h3 className="text-sm font-bold text-ink">{previewDocName}</h3>
               </div>
               <button
                 type="button"
@@ -518,7 +571,7 @@ export function AdminVerificationQueue() {
                   setPreviewDocName(null)
                   setPreviewDocUrl(null)
                 }}
-                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
+                className="text-subtle hover:text-body text-lg font-bold"
               >
                 ×
               </button>
@@ -526,15 +579,16 @@ export function AdminVerificationQueue() {
 
             {previewDocUrl ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-slate-50 border border-zinc-200 text-xs text-zinc-700 leading-relaxed">
-                  ✓ Secure signed URL token created successfully. You can download or view the decrypted file directly in your browser.
+                <div className="p-4 rounded-xl bg-surface-soft border border-border text-xs text-body leading-relaxed">
+                  ✓ Secure signed URL token created successfully. You can download or view the
+                  decrypted file directly in your browser.
                 </div>
                 <div className="flex justify-end gap-2">
                   <a
                     href={previewDocUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold inline-block"
+                    className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-inverse text-xs font-bold inline-block"
                   >
                     Open Document in New Tab ↗
                   </a>
@@ -542,26 +596,37 @@ export function AdminVerificationQueue() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200 font-mono text-[11px] text-zinc-700 leading-relaxed space-y-2">
-                  <p><b>DOCUMENT REFERENCE:</b> HR/VERIFY/2026/INT-0941</p>
-                  <p><b>ORGANIZATION:</b> Global Tech Platforms Ltd. Human Resources</p>
-                  <p><b>STATEMENT:</b></p>
+                <div className="p-5 rounded-2xl bg-surface-soft border border-border font-mono text-xs text-body leading-relaxed space-y-2">
                   <p>
-                    This certifies that {selected?.name} is employed in the capacity of Senior Software Engineer in Platform Engineering. Verified responsibilities include systems architecture, database scaling, and conducting technical bar-raiser interviews.
+                    <b>DOCUMENT REFERENCE:</b> HR/VERIFY/2026/INT-0941
                   </p>
-                  <p className="text-zinc-400 pt-2">[Digital Notarization & Cryptographic Stamp Verified]</p>
+                  <p>
+                    <b>ORGANIZATION:</b> Global Tech Platforms Ltd. Human Resources
+                  </p>
+                  <p>
+                    <b>STATEMENT:</b>
+                  </p>
+                  <p>
+                    This certifies that {selected?.name} is employed in the capacity of Senior
+                    Software Engineer in Platform Engineering. Verified responsibilities include
+                    systems architecture, database scaling, and conducting technical bar-raiser
+                    interviews.
+                  </p>
+                  <p className="text-subtle pt-2">
+                    [Digital Notarization & Cryptographic Stamp Verified]
+                  </p>
                 </div>
               </div>
             )}
 
-            <div className="mt-4 pt-3 border-t border-zinc-100 text-right">
+            <div className="mt-4 pt-3 border-t border-border-soft text-right">
               <button
                 type="button"
                 onClick={() => {
                   setPreviewDocName(null)
                   setPreviewDocUrl(null)
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-bold"
+                className="px-3.5 py-1.5 rounded-xl bg-surface-sunken hover:bg-border text-ink text-xs font-bold"
               >
                 Close Preview
               </button>

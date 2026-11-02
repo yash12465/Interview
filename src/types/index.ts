@@ -35,7 +35,14 @@ export interface InterviewerProfile {
   title: string
   category: 'professional' | 'exam_cleared' | 'faculty' | 'coach'
   domains: string[]
-  verificationStatus: 'draft' | 'submitted' | 'under_review' | 'needs_information' | 'approved' | 'rejected' | 'suspended'
+  verificationStatus:
+    | 'draft'
+    | 'submitted'
+    | 'under_review'
+    | 'needs_information'
+    | 'approved'
+    | 'rejected'
+    | 'suspended'
   verificationBadge: boolean
   experienceYears: string
   languages: string[]
@@ -156,7 +163,20 @@ export interface BookingRecord {
   scheduledDate: string
   scheduledTime: string
   durationMinutes: number
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rejected' | 'rescheduled' | 'no_show' | 'slot_held' | 'payment_pending' | 'in_progress' | 'declined' | 'disputed' | 'refunded'
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'cancelled'
+    | 'completed'
+    | 'rejected'
+    | 'rescheduled'
+    | 'no_show'
+    | 'slot_held'
+    | 'payment_pending'
+    | 'in_progress'
+    | 'declined'
+    | 'disputed'
+    | 'refunded'
   pricePaise: number
   platformFeePaise: number
   startUtc?: string
@@ -195,7 +215,13 @@ export interface AISessionRecord {
   id: string
   candidateId: string
   trackTitle: string
-  mode: 'Learn-As-You-Go' | 'Realistic Mock' | 'Technical Deep Dive' | 'Behavioural / HR' | 'Panel Simulation' | 'Resume-Based'
+  mode:
+    | 'Learn-As-You-Go'
+    | 'Realistic Mock'
+    | 'Technical Deep Dive'
+    | 'Behavioural / HR'
+    | 'Panel Simulation'
+    | 'Resume-Based'
   topic: string
   durationMinutes: number
   status: 'ready' | 'in_progress' | 'paused' | 'evaluating' | 'completed'
@@ -226,10 +252,15 @@ export interface AuditLogEvent {
   actorRole: string
   action: string
   targetResource: string
-  category: 'Verification' | 'Sensitive access' | 'Operations' | 'Content' | 'AI Governance' | 'Security'
+  category:
+    | 'Verification'
+    | 'Sensitive access'
+    | 'Operations'
+    | 'Content'
+    | 'AI Governance'
+    | 'Security'
   reason?: string
 }
-
 
 export interface NotificationItem {
   id: string
